@@ -126,7 +126,7 @@ void syscache_only_mode(void)
 	  The MMU is enabled, load the necessary page walks into the TLB.
 	*/
 
-	display_mapping(0x20000000);
+	display_mapping(0);
 
 	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
 		junk = mmio_read_32(address);
@@ -143,10 +143,10 @@ void syscache_only_mode(void)
 	write_sctlr_el3(value);
 	isb();
 
-	display_mapping(0x20000000);
+	display_mapping(0);
 	__asm__ __volatile__ ("7: b 7b");
-	tf_printf("%s:%d - 0x20000000 contains 0x%x\n", __FILE__, __LINE__,
-		  *((unsigned int *)0x20000000));
+	tf_printf("%s:%d - 0 contains 0x%x\n", __FILE__, __LINE__,
+		  *((unsigned int *)0));
 
 	return;			/* SHOULD NEVER GET HERE!!! */
 }

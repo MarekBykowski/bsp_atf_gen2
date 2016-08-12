@@ -293,6 +293,7 @@ void bl31_plat_arch_setup()
 #if USE_COHERENT_MEM
 #error "Axxia Does Not Support Coherenet Memory in Bl31!"
 #endif
+    printf("mb: %s() configuring MMU\n", __func__);
 	configure_mmu_el3(BL31_BASE, BL31_LIMIT,
 			  BL31_RO_BASE, BL31_RO_LIMIT);
 }

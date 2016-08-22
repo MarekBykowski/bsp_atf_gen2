@@ -71,8 +71,8 @@ void bl31_lib_init(void)
  ******************************************************************************/
 void bl31_main(void)
 {
-	NOTICE("BL31: %s\n", version_string);
-	NOTICE("BL31: %s\n", build_message);
+	NOTICE("BL31: mb %s %s\n", __func__ , version_string);
+	NOTICE("BL31: mb %s %s\n", __func__ ,build_message);
 
 	/* Perform remaining generic architectural setup from EL3 */
 	bl31_arch_setup();

@@ -123,12 +123,12 @@ func bl31_entrypoint
 	adr	x0, __DATA_START__
 	adr	x1, __DATA_END__
 	sub	x1, x1, x0
-	bl	clean_dcache_range
+	/*bl	clean_dcache_range*/
 
 	adr	x0, __BSS_START__
 	adr	x1, __BSS_END__
 	sub	x1, x1, x0
-	bl	clean_dcache_range
+	/*bl	clean_dcache_range*/
 
 	b	el3_exit
 endfunc bl31_entrypoint

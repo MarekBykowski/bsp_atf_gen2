@@ -1399,7 +1399,7 @@ In ARM Standard platforms, this function will initialize the BL31 runtime
 console which will cause all further BL31 logs to be output to the
 runtime console.
 
-
+#MB:
 ### Function : bl31_get_next_image_info() [mandatory]
 
     Argument : unsigned int

@@ -93,6 +93,7 @@ void mmap_add_region(unsigned long base_pa, unsigned long base_va,
 			unsigned long size, unsigned attr)
 {
 	mmap_region_t *mm = mmap;
+	debug_print("marek: mm %p\n", mm);
 	mmap_region_t *mm_last = mm + ARRAY_SIZE(mmap) - 1;
 	unsigned long pa_end = base_pa + size - 1;
 	unsigned long va_end = base_va + size - 1;

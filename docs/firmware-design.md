@@ -429,6 +429,7 @@ Future changes to the BL31 interface will be done in a backwards compatible
 way, and this enables these firmware components to be independently enhanced/
 updated to develop and exploit new functionality.
 
+MB:
 #### Required CPU state when calling `bl31_entrypoint()` during cold boot
 
 This function must only be called by the primary CPU.

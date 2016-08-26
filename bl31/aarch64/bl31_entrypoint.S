@@ -120,15 +120,23 @@ func bl31_entrypoint
 	 * caches and participate in coherency.
 	 * -------------------------------------------------------------
 	 */
-	adr	x0, __DATA_START__
+	/*adr	x0, __DATA_START__
 	adr	x1, __DATA_END__
 	sub	x1, x1, x0
-	/*bl	clean_dcache_range*/
+	bl	clean_dcache_range
 
 	adr	x0, __BSS_START__
 	adr	x1, __BSS_END__
 	sub	x1, x1, x0
-	/*bl	clean_dcache_range*/
+	bl	clean_dcache_range*/
+    
+    /*mb: set ttbr0_el3*/
+    mov x0, 0x700000
+    msr ttbr0_el3, x0
+    isb
+mb:    b mb
+    tlbi alle3
+    dsb sy
 
 	b	el3_exit
 endfunc bl31_entrypoint

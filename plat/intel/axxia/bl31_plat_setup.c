@@ -45,6 +45,244 @@
 #include <axxia_def.h>
 #include <axxia_private.h>
 
+/* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX */
+
+void
+udelay(unsigned long us);
+
+
+#define GPDMA0 0x8004120000ULL
+
+static unsigned int
+greadl(unsigned long address)
+{
+	return (*(volatile unsigned int *)(address));
+}
+
+static void
+gwritel(unsigned int value, unsigned long address)
+{
+	(*(volatile unsigned int *)(address) = (value));
+}
+
+/*
+  ==============================================================================
+  ==============================================================================
+  Private
+  ==============================================================================
+  ==============================================================================
+*/
+
+#define GPDMA_MAGIC 0xabcd1234UL
+
+#define DMA_X_SRC_COUNT				0x00
+#define DMA_Y_SRC_COUNT				0x04
+#define DMA_X_MODIF_SRC				0x08
+#define DMA_Y_MODIF_SRC				0x0c
+#define DMA_SRC_CUR_ADDR			0x10
+#define DMA_SRC_ACCESS				0x14
+#define    DMA_SRC_ACCESS_BURST_TYPE		(1<<15)
+#define    DMA_SRC_ACCESS_TAIL_LENGTH(x)	(((x) & 0xF) << 11)
+#define    DMA_SRC_ACCESS_ROTATOR_LENGTH(x)	(((x) & 1F) << 6)
+#define    DMA_SRC_ACCESS_SRC_SIZE(x)		(((x) & 7) << 3)
+#define    DMA_SRC_ACCESS_SRC_BURST(x)		(((x) & 7) << 0)
+#define DMA_SRC_MASK				0x18
+#define DMA_X_DST_COUNT				0x1c
+#define DMA_Y_DST_COUNT				0x20
+#define DMA_X_MODIF_DST				0x24
+#define DMA_Y_MODIF_DST				0x28
+#define DMA_DST_CUR_ADDR			0x2C
+#define DMA_DST_ACCESS				0x30
+#define    DMA_DST_ACCESS_DST_SIZE(x)		(((x) & 7) << 3)
+#define    DMA_DST_ACCESS_DST_BURST(x)		(((x) & 7) << 0)
+#define DMA_NXT_DESCR				0x34
+#define DMA_CHANNEL_CONFIG			0x38
+#define    DMA_CONFIG_DST_SPACE(x)		(((x) & 7) << 26)
+#define    DMA_CONFIG_SRC_SPACE(x)		(((x) & 7) << 23)
+#define    DMA_CONFIG_PRIORITY_ROW		(1<<21)
+#define    DMA_CONFIG_PRIORITY			(1<<20)
+#define    DMA_CONFIG_CH_FULL_PRIORITY          (1<<19)
+#define    DMA_CONFIG_LAST_BLOCK		(1<<15)
+#define    DMA_CONFIG_CLEAR_FIFO		(1<<14)
+#define    DMA_CONFIG_START_MEM_LOAD		(1<<13)
+#define    DMA_CONFIG_STOP_DST_EOB		(1<<11)
+#define    DMA_CONFIG_FULL_DESCR_ADDR		(1<<8)
+#define    DMA_CONFIG_INT_DST_EOT		(1<<7)
+#define    DMA_CONFIG_INT_DST_EOB		(1<<6)
+#define    DMA_CONFIG_WAIT_FOR_TASK_CNT2	(1<<5)
+#define    DMA_CONFIG_TASK_CNT2_RESET		(1<<4)
+#define    DMA_CONFIG_WAIT_FOR_TASK_CNT1	(1<<3)
+#define    DMA_CONFIG_TASK_CNT1_RESET		(1<<2)
+#define    DMA_CONFIG_TX_EN			(1<<1)
+#define    DMA_CONFIG_CHAN_EN			(1<<0)
+#define DMA_STATUS				0x3C
+#define    DMA_STATUS_WAIT_TASK_CNT2		(1<<20)
+#define    DMA_STATUS_TASK_CNT2_OVERFLOW	(1<<19)
+#define    DMA_STATUS_WAIT_TASK_CNT1		(1<<18)
+#define    DMA_STATUS_TASK_CNT1_OVERFLOW	(1<<17)
+#define    DMA_STATUS_CH_PAUS_WR_EN		(1<<16)
+#define    DMA_STATUS_ERR_ACC_DESCR		(1<<14)
+#define    DMA_STATUS_ERR_ACC_DST		(1<<13)
+#define    DMA_STATUS_ERR_ACC_SRC		(1<<12)
+#define    DMA_STATUS_ERR_OVERFLOW		(1<<9)
+#define    DMA_STATUS_ERR_UNDERFLOW		(1<<8)
+#define    DMA_STATUS_CH_PAUSE			(1<<7)
+#define    DMA_STATUS_CH_WAITING		(1<<5)
+#define    DMA_STATUS_CH_ACTIVE			(1<<4)
+#define    DMA_STATUS_TR_COMPLETE		(1<<3)
+#define    DMA_STATUS_BLK_COMPLETE		(1<<2)
+#define    DMA_STATUS_UNALIGNED_READ		(1<<1)
+#define    DMA_STATUS_UNALIGNED_WRITE		(1<<0)
+#define    DMA_STATUS_UNALIGNED_ERR		(DMA_STATUS_UNALIGNED_READ | \
+						 DMA_STATUS_UNALIGNED_WRITE)
+#define DMA_TASK_CNT_1				0x40
+#define DMA_TASK_CNT_2				0x44
+#define DMA_MODE_CONFIG				0x48
+#define DMA_CURR_DESCR				0x4c
+#define DMA_PREV_DESCR				0x50
+#define DMA_SRC_ADDR_SEG			0x54
+#define DMA_DST_ADDR_SEG			0x58
+#define DMA_DESCR_ADDR_SEG			0x5c
+
+#define DMA_STATUS_ERROR		(DMA_STATUS_ERR_ACC_DESCR | \
+					 DMA_STATUS_ERR_ACC_DST   | \
+					 DMA_STATUS_ERR_ACC_SRC   | \
+					 DMA_STATUS_ERR_OVERFLOW  | \
+					 DMA_STATUS_ERR_UNDERFLOW | \
+					 DMA_STATUS_UNALIGNED_ERR)
+
+#define DMA_STATUS_CLEAR		(DMA_STATUS_CH_PAUS_WR_EN | \
+					 DMA_STATUS_TR_COMPLETE   | \
+					 DMA_STATUS_BLK_COMPLETE)
+
+#define DMA_CONFIG_END			(DMA_CONFIG_LAST_BLOCK | \
+					 DMA_CONFIG_INT_DST_EOT)
+
+#define DMA_CONFIG_ONE_SHOT(__ext)	(DMA_CONFIG_DST_SPACE((__ext)) | \
+					 DMA_CONFIG_SRC_SPACE((__ext)) | \
+					 DMA_CONFIG_TX_EN              | \
+					 DMA_CONFIG_CHAN_EN)
+
+#define DMA_CONFIG_DSC_LOAD		(DMA_CONFIG_START_MEM_LOAD  | \
+					 DMA_CONFIG_FULL_DESCR_ADDR | \
+					 DMA_CONFIG_CHAN_EN)
+
+#define GEN_STAT                                0xf00
+#define   GEN_STAT_CH0_ACTIVE                   (1<<0)
+#define   GEN_STAT_CH1_ACTIVE                   (1<<2)
+#define   GEN_STAT_CH1_ACTIVE                   (1<<2)
+#define   GEN_STAT_CH0_ERROR                    (1<<16)
+#define   GEN_STAT_CH1_ERROR                    (1<<17)
+#define GEN_CONFIG                              0xf04
+#define  GEN_CONFIG_EXT_MEM                     (1<<19)
+#define  GEN_CONFIG_INT_EDGE(_ch)               (1<<(_ch))
+#define SOFT_RESET                              0xf08
+
+#if defined(CONFIG_ANY_XLF)
+#define GPDMA0_AXPROT_OVERRIDE 0x45800
+#else
+#define GPDMA0_AXPROT_OVERRIDE 0x48800
+#endif
+
+/*
+  ------------------------------------------------------------------------------
+  _gpdma
+
+  Use the GPDMA to write or fill memory.
+*/
+
+static int
+_gpdma(void *dest, size_t dest_size, void *src, size_t src_size, int secure)
+{
+	unsigned int gpdma0_axprot_override;
+	unsigned int gpdma0_status;
+	int retries = 1000;
+
+	/* Make sure no other transactions are in process. */
+	gpdma0_status = greadl(GPDMA0 + DMA_STATUS);
+
+	if (0 != (gpdma0_status & DMA_STATUS_CH_ACTIVE))
+		return -1;
+
+	/* Clear status bits. */
+	gwritel((DMA_STATUS_TR_COMPLETE | DMA_STATUS_BLK_COMPLETE),
+		GPDMA0 + DMA_STATUS);
+
+	/* Set gpdma0_axprot_override to secure or non-secure. */
+	gpdma0_axprot_override = greadl(MMAP_SCB + GPDMA0_AXPROT_OVERRIDE);
+
+	if (0 == secure)
+		gwritel(3, MMAP_SCB + GPDMA0_AXPROT_OVERRIDE);
+	else
+		gwritel(2, MMAP_SCB + GPDMA0_AXPROT_OVERRIDE);
+
+	/* Set up the segment registers (top 8 bits of address). */
+	gwritel((((unsigned long)dest & 0xff00000000) >> 32),
+		GPDMA0 + DMA_DST_ADDR_SEG);
+	gwritel((((unsigned long)src & 0xff00000000) >> 32),
+		GPDMA0 + DMA_SRC_ADDR_SEG);
+
+	/* Set up the rest of the address. */
+	gwritel(((unsigned long)dest & 0xffffffff), GPDMA0 + DMA_DST_CUR_ADDR);
+	gwritel(((unsigned long)src & 0xffffffff), GPDMA0 + DMA_SRC_CUR_ADDR);
+
+	/* Remaing setup. */
+	gwritel(0x425, GPDMA0 + DMA_SRC_ACCESS);
+	gwritel(0x25, GPDMA0 + DMA_DST_ACCESS);
+	gwritel(0xffffffff, GPDMA0 + DMA_SRC_MASK);
+	gwritel(16, GPDMA0 + DMA_X_MODIF_SRC);
+	gwritel(16, GPDMA0 + DMA_X_MODIF_DST);
+	gwritel((src_size / 16) - 1, GPDMA0 + DMA_X_SRC_COUNT);
+	gwritel(0, GPDMA0 + DMA_Y_SRC_COUNT);
+	gwritel((dest_size / 16) - 1, GPDMA0 + DMA_X_DST_COUNT);
+	gwritel(0, GPDMA0 + DMA_Y_DST_COUNT);
+
+	/* Start the transfer. */
+	gwritel(DMA_CONFIG_DST_SPACE(1) |
+		DMA_CONFIG_SRC_SPACE(1) |
+		DMA_CONFIG_CH_FULL_PRIORITY |
+		DMA_CONFIG_LAST_BLOCK |
+		DMA_CONFIG_FULL_DESCR_ADDR |
+		DMA_CONFIG_WAIT_FOR_TASK_CNT2 |
+		DMA_CONFIG_WAIT_FOR_TASK_CNT1 |
+		DMA_CONFIG_TX_EN |
+		DMA_CONFIG_CHAN_EN, GPDMA0 + DMA_CHANNEL_CONFIG);
+
+	/* Wait for completion. */
+	while (0 < retries--) {
+		if (0 != (greadl(GPDMA0 + DMA_STATUS) & 0x8) &&
+		    0 == greadl(GPDMA0 + DMA_X_SRC_COUNT) &&
+		    0 == greadl(GPDMA0 + DMA_X_DST_COUNT))
+			break;
+
+		udelay(1);
+	}
+
+	/* Restore gpdma0_axprot_override. */
+	gwritel(gpdma0_axprot_override, MMAP_SCB + GPDMA0_AXPROT_OVERRIDE);
+
+	if (0 == retries)
+		return -2;
+
+	return 0;
+}
+
+/*
+  ------------------------------------------------------------------------------
+  gpdma_xfer
+
+  Do a direct DMA (no descriptors) transfer.
+*/
+
+int
+gpdma_xfer2(void *dest, void *src, size_t size, int secure)
+{
+	return _gpdma(dest, size, src, size, secure);
+}
+
+/* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX */
+
+
 axxia_configuration_t axxia_configuration;
 
 /*******************************************************************************
@@ -114,6 +352,139 @@ display_mapping(unsigned long address)
   syscache_only_mode
 */
 
+ /*
+  * TCR flags.
+  */
+#define VA_BITS         (42)    /* 42 bits virtual address */
+#define TCR_T0SZ(x)     ((64 - (x)) << 0)
+#define TCR_IRGN_NC     (0 << 8)
+#define TCR_IRGN_WBWA       (1 << 8)
+#define TCR_IRGN_WT     (2 << 8)
+#define TCR_IRGN_WBNWA      (3 << 8)
+#define TCR_IRGN_MASK       (3 << 8)
+#define TCR_ORGN_NC     (0 << 10)
+#define TCR_ORGN_WBWA       (1 << 10)
+#define TCR_ORGN_WT     (2 << 10)
+#define TCR_ORGN_WBNWA      (3 << 10)
+#define TCR_ORGN_MASK       (3 << 10)
+#define TCR_SHARED_NON      (0 << 12)
+#define TCR_SHARED_OUTER    (2 << 12)
+#define TCR_SHARED_INNER    (3 << 12)
+#define TCR_TG0_4K      (0 << 14)
+#define TCR_TG0_64K     (1 << 14)
+#define TCR_TG0_16K     (2 << 14)
+#define TCR_EL1_IPS_BITS    (UL(3) << 32)   /* 42 bits physical address */
+#define TCR_EL2_IPS_BITS    (3 << 16)   /* 42 bits physical address */
+#define TCR_EL3_IPS_BITS    (3 << 16)   /* 42 bits physical address */
+
+/* PTWs cacheable, inner/outer WBWA and inner shareable */
+#define TCR_FLAGS       (TCR_TG0_64K |      \
+                TCR_SHARED_INNER |  \
+                TCR_ORGN_WBWA |     \
+                TCR_IRGN_WBWA |     \
+                TCR_T0SZ(VA_BITS))
+
+
+#define TCR_EL1_RSVD        (1 << 31)
+#define TCR_EL2_RSVD        (1 << 31 | 1 << 23)
+#define TCR_EL3_RSVD        (1 << 31 | 1 << 23)
+#define TCR_EL2_IPS_BITS    (3 << 16)   /* 42 bits physical address */
+
+/*                
+ * Memory types
+ */                 
+#ifdef __ASSEMBLY__
+#define _AC(X, Y)   X
+#else
+#define _AC(X, Y)   (X##Y)
+#endif
+
+#define UL(x)       _AC(x, UL)
+
+#define MT_DEVICE_NGNRNE    0
+#define MT_DEVICE_NGNRE     1
+#define MT_DEVICE_GRE       2
+#define MT_NORMAL_NC        3
+#define MT_NORMAL       4
+
+#define MEMORY_ATTRIBUTES   ((0x00 << (MT_DEVICE_NGNRNE*8)) |   \
+                (0x04 << (MT_DEVICE_NGNRE*8)) |     \
+                (0x0c << (MT_DEVICE_GRE*8)) |       \
+                (0x44 << (MT_NORMAL_NC*8)) |        \
+                (UL(0xff) << (MT_NORMAL*8)))
+
+#define CR_M        (1 << 0)    /* MMU enable           */
+#define CR_A        (1 << 1)    /* Alignment abort enable   */
+#define CR_C        (1 << 2)    /* Dcache enable        */
+#define CR_SA       (1 << 3)    /* Stack Alignment Check Enable */
+#define CR_I        (1 << 12)   /* Icache enable        */
+#define CR_WXN      (1 << 19)   /* Write Permision Imply XN */
+#define CR_EE       (1 << 25)   /* Exception (Big) Endian   */
+
+/* AttrIndx[2:0] */
+#define PMD_ATTRINDX(t)     ((t) << 2)
+
+/*
+ *  * Hardware page table definitions. 
+ *   *
+ *    * Level 2 descriptor (PMD).
+ *     */   
+#define PMD_TYPE_MASK       (3 << 0)
+#define PMD_TYPE_FAULT      (0 << 0)
+#define PMD_TYPE_TABLE      (3 << 0)
+#define PMD_TYPE_SECT       (1 << 0)
+
+/*    
+ *     * Section
+ *      */
+#define PMD_SECT_NON_SHARE  (0 << 8)
+#define PMD_SECT_OUTER_SHARE    (2 << 8)
+#define PMD_SECT_INNER_SHARE    (3 << 8)
+#define PMD_SECT_AF     (1 << 10)
+#define PMD_SECT_NG     (1 << 11)
+#define PMD_SECT_PXN        (UL(1) << 53)
+#define PMD_SECT_UXN        (UL(1) << 54)
+
+#define PGTABLE_SIZE    (0x10000)
+#define SECTION_SHIFT 29
+#define CACHE_PGTABLE_ADDR (0x700000)
+
+static
+inline void set_pgtable_section(uint64_t *page_table, uint64_t index, uint64_t section,
+             uint64_t memory_type, uint64_t share)
+{
+    uint64_t value;
+    value = section | PMD_TYPE_SECT | PMD_SECT_INNER_SHARE | PMD_SECT_AF;
+    value |= PMD_ATTRINDX(memory_type);
+    value |= share;
+    page_table[index] = value;
+}
+
+
+static 
+void setup_pt(void)
+{
+     uint64_t start = 0;
+     uint64_t end = 0x40000000, i, j;
+
+     /* Setup an identity-mapping for all spaces */
+     for (i = 0; i < (PGTABLE_SIZE >> 3); i++) {
+         set_pgtable_section((void*)CACHE_PGTABLE_ADDR, i, i << SECTION_SHIFT,
+                      MT_DEVICE_NGNRNE, PMD_SECT_NON_SHARE);
+                     /*MT_DEVICE_NGNRNE, PMD_SECT_OUTER_SHARE);*/
+     }
+
+     /* Setup an identity-mapping for all RAM space */
+         printf("mb: mmu: start mem 0x%lx, end 0x%lx\n",
+             start, end);
+         for (j = start >> SECTION_SHIFT;
+              j < end >> SECTION_SHIFT; j++) {
+             set_pgtable_section((void*)CACHE_PGTABLE_ADDR, j, j << SECTION_SHIFT,
+                         MT_NORMAL, PMD_SECT_NON_SHARE);
+         }
+
+}
+
 static
 void syscache_only_mode(void)
 {
@@ -121,32 +492,74 @@ void syscache_only_mode(void)
 	unsigned int junk;
 	int i;
 	unsigned int value;
+    uint32_t *l = (void*)CACHE_PGTABLE_ADDR;
+    uint64_t ttbr_lsm;
+    /*
+	uint64_t ttbr_src, ttbr_dest, attr = 0xffffffff,
+        tcr = TCR_EL3_RSVD | TCR_FLAGS | TCR_EL3_IPS_BITS;
+    void (*entry)(void *, void *);*/
 
 	/*
 	  The MMU is enabled, load the necessary page walks into the TLB.
 	*/
-
 	display_mapping(0);
-
 	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
 		junk = mmio_read_32(address);
 		junk = junk;
 		address += sizeof(unsigned int);
 	}
 
-	/*
-	  Enable Caching
-	*/
-
+	__asm__ __volatile__("mrs %0, ttbr0_el3" : "=r" (ttbr_lsm) :: "memory");
+    tf_printf("mb: ttbr0_el3 0x%lx\n", ttbr_lsm);
+    
+    /* Enable caching */
 	value = read_sctlr_el3();
 	value |= SCTLR_C_BIT;
 	write_sctlr_el3(value);
 	isb();
-
+    dsb();
 	display_mapping(0);
+
+    __asm__ __volatile__("lo: b lo");
+    setup_pt();
+	/*ret = gpdma_xfer2((void *)ttbr_dest, (void *)ttbr_src, 8192, 1);
+	if (ret != 0)
+		tf_printf("xfer error %d\n", ret);*/
+
+
+    /*
 	__asm__ __volatile__ ("7: b 7b");
-	tf_printf("%s:%d - 0 contains 0x%x\n", __FILE__, __LINE__,
-		  *((unsigned int *)0));
+	__asm__ __volatile__("msr ttbr0_el3, %0" : : "r" (ttbr_dest): "memory");
+    tcr = tcr | 0x2000;
+    __asm__ __volatile__("msr tcr_el3, %0" : : "r" (tcr) : "memory");
+    __asm__ __volatile__("msr mair_el3, %0" : : "r" (attr) : "memory");
+    __asm__ __volatile__("isb");
+    */
+    /*tlbialle3();*/
+	/*__asm__ __volatile__("tlbi alle3\n" 
+                         "dsb sy\n" 
+                         "isb");*/
+
+
+    for (int i=0; i<4; i++)
+        tf_printf("mb: values at addr CACHE_PGTABLE_ADDR 0x%x (offset %x): 0x%x\n", CACHE_PGTABLE_ADDR, i*4, *(l+i));
+
+    address = 0x0;
+	for (i = 0; i < 0x800000; i += sizeof(unsigned int)) {
+		junk = mmio_read_32(address);
+		junk = junk;
+		address += sizeof(unsigned int);
+	}
+    address = TZRAM_BASE;
+	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
+		junk = mmio_read_32(address);
+		junk = junk;
+		address += sizeof(unsigned int);
+	}
+
+    /*entry = (void (*)(void *, void *))0;
+    entry(NULL, NULL);
+    __asm__ __volatile__("b #0x0");*/
 
 	return;			/* SHOULD NEVER GET HERE!!! */
 }

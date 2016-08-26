@@ -347,7 +347,7 @@ endfunc save_gp_registers
 func restore_gp_registers_eret
 	ldp	x0, x1, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X0]
 	ldp	x2, x3, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X2]
-	b	restore_gp_registers_callee_eret
+    b	restore_gp_registers_callee_eret
 endfunc restore_gp_registers_eret
 
 func restore_gp_registers_callee_eret
@@ -366,6 +366,7 @@ func restore_gp_registers_callee_eret
 	ldp	 x30, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_LR]
 	msr	sp_el0, x17
 	ldp	x16, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X16]
+    b #0
 	eret
 endfunc	restore_gp_registers_callee_eret
 

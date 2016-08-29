@@ -44,6 +44,7 @@
 
 #include <axxia_def.h>
 #include <axxia_private.h>
+#include <xlat_tables.h>
 
 /* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX */
 
@@ -314,16 +315,16 @@ static entry_point_info_t bl33_ep_info;
 */
 
 static void
-display_mapping(unsigned long address)
+display_mapping(uint64_t address)
 {
-	unsigned long par_el1;
+	uint64_t par_el1;
 
-	tf_printf("----- Translating VA 0x%lx\n", address);
+	printf("----- Translating VA 0x%lx\n", address);
 	__asm__ __volatile__ ("at s1e3r, %0" : : "r" (address));
 	__asm__ __volatile__ ("mrs %0, PAR_EL1\n" : "=r" (par_el1));
 
 	if (0 != (par_el1 & 1)) {
-		tf_printf("Address Translation Failed: 0x%lx\n"
+		printf("Address Translation Failed: 0x%lx\n"
 			  "    FSC: 0x%lx\n"
 			  "    PTW: 0x%lx\n"
 			  "      S: 0x%lx\n",
@@ -332,7 +333,7 @@ display_mapping(unsigned long address)
 			  (par_el1 & 0x100) >> 8,
 			  (par_el1 & 0x200) >> 9);
 	} else {
-		tf_printf("Address Translation Succeeded: 0x%lx\n"
+		printf("Address Translation Succeeded: 0x%lx\n"
 			  "  SH: 0x%lx\n"
 			  "  NS: 0x%lx\n"
 			  "  PA: 0x%lx\n"
@@ -448,7 +449,9 @@ display_mapping(unsigned long address)
 #define PGTABLE_SIZE    (0x10000)
 #define SECTION_SHIFT 29
 #define CACHE_PGTABLE_ADDR (0x700000)
+#define SET_NS (0x20)
 
+#if 0
 static
 inline void set_pgtable_section(uint64_t *page_table, uint64_t index, uint64_t section,
              uint64_t memory_type, uint64_t share)
@@ -457,6 +460,7 @@ inline void set_pgtable_section(uint64_t *page_table, uint64_t index, uint64_t s
     value = section | PMD_TYPE_SECT | PMD_SECT_INNER_SHARE | PMD_SECT_AF;
     value |= PMD_ATTRINDX(memory_type);
     value |= share;
+    /*value |= SET_NS;*/
     page_table[index] = value;
 }
 
@@ -464,8 +468,8 @@ inline void set_pgtable_section(uint64_t *page_table, uint64_t index, uint64_t s
 static 
 void setup_pt(void)
 {
-     uint64_t start = 0;
-     uint64_t end = 0x40000000, i, j;
+     uint64_t ddr_start = 0, lsm_start = 0x8031000000;
+     uint64_t ddr_end = 0x40000000, lsm_end = lsm_start + 0x40000, i, j;
 
      /* Setup an identity-mapping for all spaces */
      for (i = 0; i < (PGTABLE_SIZE >> 3); i++) {
@@ -475,15 +479,19 @@ void setup_pt(void)
      }
 
      /* Setup an identity-mapping for all RAM space */
-         printf("mb: mmu: start mem 0x%lx, end 0x%lx\n",
-             start, end);
-         for (j = start >> SECTION_SHIFT;
-              j < end >> SECTION_SHIFT; j++) {
-             set_pgtable_section((void*)CACHE_PGTABLE_ADDR, j, j << SECTION_SHIFT,
-                         MT_NORMAL, PMD_SECT_NON_SHARE);
-         }
+     for (j = ddr_start >> SECTION_SHIFT;
+          j < ddr_end >> SECTION_SHIFT; j++) {
+         set_pgtable_section((void*)CACHE_PGTABLE_ADDR, j, j << SECTION_SHIFT,
+                     MT_NORMAL, PMD_SECT_NON_SHARE);
+     }
+     for (j = lsm_start >> SECTION_SHIFT;
+          j < lsm_end >> SECTION_SHIFT; j++) {
+         set_pgtable_section((void*)CACHE_PGTABLE_ADDR, j, j << SECTION_SHIFT,
+                     MT_NORMAL, PMD_SECT_NON_SHARE);
+     }
 
 }
+#endif
 
 static
 void syscache_only_mode(void)
@@ -496,8 +504,9 @@ void syscache_only_mode(void)
     uint64_t ttbr_lsm;
     /*
 	uint64_t ttbr_src, ttbr_dest, attr = 0xffffffff,
-        tcr = TCR_EL3_RSVD | TCR_FLAGS | TCR_EL3_IPS_BITS;
-    void (*entry)(void *, void *);*/
+        tcr = TCR_EL3_RSVD | TCR_FLAGS | TCR_EL3_IPS_BITS;*/
+	uint64_t ttbr_dest, attr, tcr;
+    void (*entry)(void *, void *);
 
 	/*
 	  The MMU is enabled, load the necessary page walks into the TLB.
@@ -519,30 +528,29 @@ void syscache_only_mode(void)
 	isb();
     dsb();
 	display_mapping(0);
+    /*display_mapping(0x8031000000);*/
 
-    __asm__ __volatile__("lo: b lo");
-    setup_pt();
+    /*init_xlat_tables2();*/
+    /*setup_pt();*/
 	/*ret = gpdma_xfer2((void *)ttbr_dest, (void *)ttbr_src, 8192, 1);
 	if (ret != 0)
 		tf_printf("xfer error %d\n", ret);*/
 
 
-    /*
+    
 	__asm__ __volatile__ ("7: b 7b");
+    ttbr_dest = 0x700000;
 	__asm__ __volatile__("msr ttbr0_el3, %0" : : "r" (ttbr_dest): "memory");
-    tcr = tcr | 0x2000;
+    tcr = 0x80823518;
     __asm__ __volatile__("msr tcr_el3, %0" : : "r" (tcr) : "memory");
+    attr = 0xFFFFFFFFFF000044;
     __asm__ __volatile__("msr mair_el3, %0" : : "r" (attr) : "memory");
     __asm__ __volatile__("isb");
-    */
+    
     /*tlbialle3();*/
 	/*__asm__ __volatile__("tlbi alle3\n" 
                          "dsb sy\n" 
                          "isb");*/
-
-
-    for (int i=0; i<4; i++)
-        tf_printf("mb: values at addr CACHE_PGTABLE_ADDR 0x%x (offset %x): 0x%x\n", CACHE_PGTABLE_ADDR, i*4, *(l+i));
 
     address = 0x0;
 	for (i = 0; i < 0x800000; i += sizeof(unsigned int)) {
@@ -557,9 +565,9 @@ void syscache_only_mode(void)
 		address += sizeof(unsigned int);
 	}
 
-    /*entry = (void (*)(void *, void *))0;
+	__asm__ __volatile__ ("7: b 7b");
+    entry = (void (*)(void *, void *))0;
     entry(NULL, NULL);
-    __asm__ __volatile__("b #0x0");*/
 
 	return;			/* SHOULD NEVER GET HERE!!! */
 }

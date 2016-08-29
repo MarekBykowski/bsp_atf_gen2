@@ -87,6 +87,7 @@ void mmap_add_region(unsigned long base_pa, unsigned long base_va,
 void mmap_add(const mmap_region_t *mm);
 
 void init_xlat_tables(void);
+void init_xlat_tables2(void);
 
 void enable_mmu_el1(uint32_t flags);
 void enable_mmu_el3(uint32_t flags);

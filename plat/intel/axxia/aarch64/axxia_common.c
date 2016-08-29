@@ -42,7 +42,10 @@
  * Macro generating the code for the function setting up the pagetables as per
  * the platform memory map & initialize the mmu, for the given exception level
  ******************************************************************************/
-/*mmu in trusted firmware*/
+/*mb: mmu in trusted firmware*/
+/*void mmap_add_region(unsigned long base_pa, unsigned long base_va,
+ *             unsigned long size, unsigned attr)
+ */
 #define DEFINE_CONFIGURE_MMU_EL(_el)				               \
 	void configure_mmu_el##_el(unsigned long total_base,	               \
 				  unsigned long total_size,	               \
@@ -67,6 +70,7 @@
 	       mmap_add_region(DEVICE1_BASE, DEVICE1_BASE, DEVICE1_SIZE,       \
 			       MT_DEVICE | MT_RW | MT_SECURE);                 \
                                                                                \
+/*DRAM size 0 to 0x800000 of L3 cache and more*/ \
 	       mmap_add_region(DRAM_BASE, DRAM_BASE, DRAM_SIZE,                \
 			       MT_MEMORY | MT_RW | MT_SECURE | MT_CACHED);     \
 		                                                               \

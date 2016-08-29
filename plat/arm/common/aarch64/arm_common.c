@@ -73,6 +73,7 @@ static const int cci_map[] = {
 		enable_mmu_el##_el(0);					\
 	}
 #else
+/*arm_configure_mmu_el##_el*/
 #define DEFINE_CONFIGURE_MMU_EL(_el)					\
 	void arm_configure_mmu_el##_el(unsigned long total_base,	\
 				   unsigned long total_size,		\

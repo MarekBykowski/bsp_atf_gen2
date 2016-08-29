@@ -250,6 +250,7 @@ void bl31_plat_runtime_setup(void)
  ******************************************************************************/
 void arm_bl31_plat_arch_setup(void)
 {
+    /*arm_configure_mmu_el3*/
 	arm_configure_mmu_el3(BL31_RO_BASE,
 			      (BL31_END - BL31_RO_BASE),
 			      BL31_RO_BASE,

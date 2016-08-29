@@ -130,13 +130,7 @@ func bl31_entrypoint
 	sub	x1, x1, x0
 	bl	clean_dcache_range*/
     
-    /*mb: set ttbr0_el3*/
-    mov x0, 0x700000
-    msr ttbr0_el3, x0
-    isb
-mb:    b mb
-    tlbi alle3
-    dsb sy
+
 
 	b	el3_exit
 endfunc bl31_entrypoint

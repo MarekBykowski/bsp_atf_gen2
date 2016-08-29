@@ -45,6 +45,8 @@
 #include <stdio.h>
 #endif
 
+#include <debug.h>
+
 #if DEBUG_XLAT_TABLE
 #define debug_print(...) printf(__VA_ARGS__)
 #else
@@ -77,16 +79,16 @@ static mmap_region_t mmap[MAX_MMAP_REGIONS + 1];
 
 static void print_mmap(void)
 {
-#if DEBUG_XLAT_TABLE
-	debug_print("mmap:\n");
+/*#if DEBUG_XLAT_TABLE*/
+	printf("mmap:\n");
 	mmap_region_t *mm = mmap;
 	while (mm->size) {
-		debug_print(" %010lx %010lx %10lx %x\n", mm->base_va,
+		printf(" %010lx %010lx %10lx %x\n", mm->base_va,
 					mm->base_pa, mm->size, mm->attr);
 		++mm;
 	};
-	debug_print("\n");
-#endif
+	printf("\n");
+/*#endif*/
 }
 
 void mmap_add_region(unsigned long base_pa, unsigned long base_va,
@@ -195,6 +197,7 @@ static int mmap_region_attr(mmap_region_t *mm, unsigned long base_va,
 	}
 }
 
+/*init_xlation_table(mmap, 0, l0_xlation_table, 0);*/
 static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 					unsigned long base_va,
 					unsigned long *table, unsigned level)
@@ -206,7 +209,7 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 
 	assert(level <= 3);
 
-	debug_print("New xlat table:\n");
+	printf("xlat table at 0x%lx\n", (unsigned long int)table);
 
 	do  {
 		unsigned long desc = UNSET_DESC;
@@ -217,7 +220,7 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 			continue;
 		}
 
-		debug_print("        %010lx %010lx " + 8 - 2 * level,
+		print("        %010lx %010lx\n",
 			    base_va, level_size);
 
 		if (mm->base_va >= base_va + level_size) {
@@ -254,6 +257,67 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 	return mm;
 }
 
+static mmap_region_t *init_xlation_table2(mmap_region_t *mm,
+					unsigned long base_va,
+					unsigned long *table, unsigned level)
+{
+	unsigned level_size_shift = (L0_XLAT_ADDRESS_SHIFT -
+				     level * XLAT_TABLE_ENTRIES_SHIFT);
+	unsigned long level_size = 1UL << level_size_shift;
+	unsigned long level_index_mask = XLAT_TABLE_ENTRIES_MASK << level_size_shift;
+
+	assert(level <= 3);
+
+	printf("New xlat table at 0x%lx\n", (unsigned long int)table);
+
+	do  {
+		unsigned long desc = UNSET_DESC;
+
+		if (mm->base_va + mm->size <= base_va) {
+			/* Area now after the region so skip it */
+			++mm;
+			continue;
+		}
+
+		debug_print("        %010lx %010lx " + 8 - 2 * level,
+			    base_va, level_size);
+
+		if (mm->base_va >= base_va + level_size) {
+			/* Next region is after area so nothing to map yet */
+			desc = INVALID_DESC;
+		} else if (mm->base_va <= base_va && mm->base_va + mm->size >=
+				base_va + level_size) {
+			/* Next region covers all of area */
+			int attr = mmap_region_attr(mm, base_va, level_size);
+			if (attr >= 0)
+				desc = mmap_desc(attr,
+					base_va - mm->base_va + mm->base_pa,
+					level);
+		}
+		/* else Next region only partially covers area, so need */
+
+		if (desc == UNSET_DESC) {
+			/* Area not covered by a region so need finer table */
+			unsigned long *new_table = (unsigned long *)0x703000 + (0x1000 * next_xlat);/*xlat_tables[next_xlat++];*/
+			next_xlat++;
+			assert(next_xlat <= MAX_XLAT_TABLES);
+			desc = TABLE_DESC | (unsigned long)new_table;
+
+			/* Recurse to fill in new table */
+			mm = init_xlation_table2(mm, base_va,
+						new_table, level+1);
+		}
+
+		debug_print("\n");
+
+		*table++ = desc;
+		base_va += level_size;
+	} while (mm->size && (base_va & level_index_mask));
+
+	return mm;
+}
+
+
 static unsigned int calc_physical_addr_size_bits(unsigned long max_addr)
 {
 	/* Physical address can't exceed 48 bits */
@@ -286,9 +350,16 @@ void init_xlat_tables(void)
 {
 	print_mmap();
 	init_xlation_table(mmap, 0, l0_xlation_table, 0);
-	tcr_ps_bits = calc_physical_addr_size_bits(max_pa);
+    tcr_ps_bits = calc_physical_addr_size_bits(max_pa);
 	assert(max_va < ADDR_SPACE_SIZE);
 }
+
+void init_xlat_tables2(void)
+{
+	next_xlat = 0;
+	init_xlation_table2(mmap, 0, (unsigned long *)0x700000, 0);
+}
+
 
 /*******************************************************************************
  * Macro generating the code for the function enabling the MMU in the given

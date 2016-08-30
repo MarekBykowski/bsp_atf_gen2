@@ -500,12 +500,12 @@ void syscache_only_mode(void)
 	unsigned int junk;
 	int i;
 	unsigned int value;
-    uint32_t *l = (void*)CACHE_PGTABLE_ADDR;
+    /*uint32_t *l = (void*)CACHE_PGTABLE_ADDR;*/
     uint64_t ttbr_lsm;
     /*
 	uint64_t ttbr_src, ttbr_dest, attr = 0xffffffff,
         tcr = TCR_EL3_RSVD | TCR_FLAGS | TCR_EL3_IPS_BITS;*/
-	uint64_t ttbr_dest, attr, tcr;
+	uint64_t ttbr_dest; /*, attr, tcr;*/
     void (*entry)(void *, void *);
 
 	/*
@@ -526,44 +526,44 @@ void syscache_only_mode(void)
 	value |= SCTLR_C_BIT;
 	write_sctlr_el3(value);
 	isb();
-    dsb();
 	display_mapping(0);
     /*display_mapping(0x8031000000);*/
 
-    /*init_xlat_tables2();*/
+    init_xlat_tables2();
+
+    /* Disable caching */
+	value = read_sctlr_el3();
+	value &= ~SCTLR_C_BIT;
+	write_sctlr_el3(value);
+	isb();
+
+    gpdma_xfer2((void *)0x8031030000, (void *)0x700000, 0x9000, 1);
+    gpdma_xfer2((void *)0x700000, (void *)0x8031030000, 0x9000, 1);
+    
+    /* Enable caching */
+	value = read_sctlr_el3();
+	value |= SCTLR_C_BIT;
+	write_sctlr_el3(value);
+	isb();
     /*setup_pt();*/
 	/*ret = gpdma_xfer2((void *)ttbr_dest, (void *)ttbr_src, 8192, 1);
 	if (ret != 0)
 		tf_printf("xfer error %d\n", ret);*/
 
 
-    
-	__asm__ __volatile__ ("7: b 7b");
     ttbr_dest = 0x700000;
 	__asm__ __volatile__("msr ttbr0_el3, %0" : : "r" (ttbr_dest): "memory");
-    tcr = 0x80823518;
+    /*tcr = 0x80823518;
     __asm__ __volatile__("msr tcr_el3, %0" : : "r" (tcr) : "memory");
     attr = 0xFFFFFFFFFF000044;
-    __asm__ __volatile__("msr mair_el3, %0" : : "r" (attr) : "memory");
-    __asm__ __volatile__("isb");
+    __asm__ __volatile__("msr mair_el3, %0" : : "r" (attr) : "memory");*/
     
-    /*tlbialle3();*/
-	/*__asm__ __volatile__("tlbi alle3\n" 
-                         "dsb sy\n" 
-                         "isb");*/
-
-    address = 0x0;
-	for (i = 0; i < 0x800000; i += sizeof(unsigned int)) {
-		junk = mmio_read_32(address);
-		junk = junk;
-		address += sizeof(unsigned int);
-	}
-    address = TZRAM_BASE;
-	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
-		junk = mmio_read_32(address);
-		junk = junk;
-		address += sizeof(unsigned int);
-	}
+    dsb();
+    tlbialle3();
+    dsb();
+    isb();
+  
+    flush_dcache_range(0x8031000000ULL, (256 * 1024));
 
 	__asm__ __volatile__ ("7: b 7b");
     entry = (void (*)(void *, void *))0;

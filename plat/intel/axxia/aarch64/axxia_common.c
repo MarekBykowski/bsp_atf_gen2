@@ -59,6 +59,9 @@
 			       TZRAM_SIZE - (ro_limit - ro_start),             \
 			       MT_MEMORY | MT_RW | MT_SECURE);	               \
                                                                                \
+	       mmap_add_region(0x8031020000, 0x8031020000,                             \
+			       0x17000,             \
+			       MT_MEMORY | MT_RW | MT_SECURE);	               \
 	       if (IS_6700())                                                  \
 		       mmap_add_region(XLF_CCN_BASE, XLF_CCN_BASE,             \
 				       XLF_CCN_SIZE,			       \

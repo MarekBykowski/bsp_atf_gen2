@@ -378,6 +378,11 @@ func restore_gp_registers_callee_eret
 mb:    b mb
     tlbi alle3
     dsb sy
+    ldr x0, =0x8031000000
+    ldr x1, =0x8031040000
+    sub x1, x1, x0
+    bl  flush_dcache_range
+
     mov x0, #0
     br x0
 	eret

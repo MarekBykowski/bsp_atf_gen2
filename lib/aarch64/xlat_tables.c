@@ -220,8 +220,10 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 			continue;
 		}
 
-		print("        %010lx %010lx\n",
+#if 0
+		printf("        %010lx %010lx\n",
 			    base_va, level_size);
+#endif
 
 		if (mm->base_va >= base_va + level_size) {
 			/* Next region is after area so nothing to map yet */
@@ -298,7 +300,7 @@ static mmap_region_t *init_xlation_table2(mmap_region_t *mm,
 
 		if (desc == UNSET_DESC) {
 			/* Area not covered by a region so need finer table */
-			unsigned long *new_table = (unsigned long *)0x703000 + (0x1000 * next_xlat);/*xlat_tables[next_xlat++];*/
+			unsigned long *new_table = (unsigned long *)0x703000 + (0x200 * next_xlat);/*xlat_tables[next_xlat++];*/
 			next_xlat++;
 			assert(next_xlat <= MAX_XLAT_TABLES);
 			desc = TABLE_DESC | (unsigned long)new_table;

@@ -51,7 +51,7 @@ static int32_t (*bl32_init)(void);
  * Variable to indicate whether next image to execute after BL31 is BL33
  * (non-secure & default) or BL32 (secure).
  ******************************************************************************/
-static uint32_t next_image_type = NON_SECURE;
+static uint32_t next_image_type = SECURE;
 
 /*******************************************************************************
  * Simple function to initialise all BL31 helper libraries.

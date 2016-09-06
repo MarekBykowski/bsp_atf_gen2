@@ -348,6 +348,7 @@ func restore_gp_registers_eret
 	ldp	x0, x1, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X0]
 	ldp	x2, x3, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X2]
     b	restore_gp_registers_callee_eret
+
 endfunc restore_gp_registers_eret
 
 func restore_gp_registers_callee_eret
@@ -368,6 +369,7 @@ func restore_gp_registers_callee_eret
 	ldp	x16, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X16]
 
     /*mb: set ttbr0_el3*/
+mb:    b mb
     mov x0, #0x700000
     msr ttbr0_el3, x0
     ldr x0, =0x80823518
@@ -375,13 +377,13 @@ func restore_gp_registers_callee_eret
     ldr x0, =0xFFFFFFFFFF000044
     msr mair_el3, x0
     isb
-mb:    b mb
+    dsb sy
     tlbi alle3
     dsb sy
-    ldr x0, =0x8031000000
+    /*ldr x0, =0x8031000000
     ldr x1, =0x8031040000
     sub x1, x1, x0
-    bl  flush_dcache_range
+    bl  flush_dcache_range*/
 
     mov x0, #0
     br x0
@@ -402,7 +404,7 @@ func el3_exit
 	 * -----------------------------------------------------
 	 */
 	mov	x17, sp
-	msr	spsel, #1
+	msr	spsel, #1 /* switch to SP_EL other than 0*/
 	str	x17, [sp, #CTX_EL3STATE_OFFSET + CTX_RUNTIME_SP]
 
 	/* -----------------------------------------------------

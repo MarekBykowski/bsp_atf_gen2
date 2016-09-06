@@ -37,6 +37,7 @@
  * enabling the MMU.
  */
 #define DISABLE_DCACHE		(1 << 0)
+#define ENABLE_DCACHE		(0 << 0)
 
 #ifndef __ASSEMBLY__
 #include <stdint.h>

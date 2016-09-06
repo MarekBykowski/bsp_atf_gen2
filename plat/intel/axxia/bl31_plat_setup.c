@@ -493,6 +493,56 @@ void setup_pt(void)
 }
 #endif
 
+#if 0
+static 
+void syscache_only_mode(void)
+{
+	unsigned long address = TZRAM_BASE;
+	unsigned int junk;
+	int i;
+    uint64_t ttbr;
+    void (*entry)(void *, void *);
+
+	/*
+	  The MMU is enabled, load the necessary page walks into the TLB.
+	*/
+	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
+		junk = mmio_read_32(address);
+		junk = junk;
+		address += sizeof(unsigned int);
+	}
+
+	display_mapping(0);
+	__asm__ __volatile__("mrs %0, ttbr0_el3" : "=r" (ttbr) :: "memory");
+    tf_printf("mb: ttbr0_el3 0x%lx\n", ttbr);
+    
+    entry = (void (*)(void *, void *)) 0;
+    entry(NULL, NULL);
+
+	return;			/* SHOULD NEVER GET HERE!!! */
+
+}
+#else 
+
+static
+void branch_and_return(void)
+{
+
+    printf("mb: branching to itslef\n");
+    
+    __asm__ __volatile__(
+                "ldr x2, =0x700000\t\n"
+                "dalej: sub x2, x2, #0x100000\t\n"
+                "mov x0, x2\t\n"
+                "ldr x1, =0xD65F03C0\t\n"
+                "str x1, [x0]\n"
+                "llll: b llll\t\n"
+                "blr x2\t\n"
+                "cmp x2, #0x0\t\n"
+                "ble dalej\t\n"
+    );
+}
+
 static
 void syscache_only_mode(void)
 {
@@ -501,77 +551,59 @@ void syscache_only_mode(void)
 	int i;
 	unsigned int value;
     /*uint32_t *l = (void*)CACHE_PGTABLE_ADDR;*/
-    uint64_t ttbr_lsm;
-    /*
-	uint64_t ttbr_src, ttbr_dest, attr = 0xffffffff,
-        tcr = TCR_EL3_RSVD | TCR_FLAGS | TCR_EL3_IPS_BITS;*/
-	uint64_t ttbr_dest; /*, attr, tcr;*/
+	/*uint64_t ttbr, attr, tcr = TCR_EL3_RSVD | TCR_FLAGS | TCR_EL3_IPS_BITS;*/
     void (*entry)(void *, void *);
 
 	/*
 	  The MMU is enabled, load the necessary page walks into the TLB.
 	*/
-	display_mapping(0);
 	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
 		junk = mmio_read_32(address);
 		junk = junk;
 		address += sizeof(unsigned int);
 	}
 
-	__asm__ __volatile__("mrs %0, ttbr0_el3" : "=r" (ttbr_lsm) :: "memory");
-    tf_printf("mb: ttbr0_el3 0x%lx\n", ttbr_lsm);
-    
+    /*init_xlat_tables2();*/
+
+	display_mapping(0);
     /* Enable caching */
 	value = read_sctlr_el3();
 	value |= SCTLR_C_BIT;
 	write_sctlr_el3(value);
 	isb();
 	display_mapping(0);
-    /*display_mapping(0x8031000000);*/
 
-    init_xlat_tables2();
-
-    /* Disable caching */
-	value = read_sctlr_el3();
-	value &= ~SCTLR_C_BIT;
-	write_sctlr_el3(value);
-	isb();
-
-    gpdma_xfer2((void *)0x8031030000, (void *)0x700000, 0x9000, 1);
-    gpdma_xfer2((void *)0x700000, (void *)0x8031030000, 0x9000, 1);
+{
+    /*uint64_t *addr = (uint64_t*) 0;
+    for (int i=0; i<4; i++)
+        printf("val 0x%lx at 0x%lx\n",*addr+i, (uint64_t) (addr+i));
+    uint64_t *addr = (uint64_t*) 0x700000; 
+    for (int i=0; i<4; i++)
+        printf("val 0x%lx at 0x%lx\n",*(addr+i), (uint64_t) addr+i);*/
+}
     
-    /* Enable caching */
-	value = read_sctlr_el3();
-	value |= SCTLR_C_BIT;
-	write_sctlr_el3(value);
-	isb();
     /*setup_pt();*/
 	/*ret = gpdma_xfer2((void *)ttbr_dest, (void *)ttbr_src, 8192, 1);
 	if (ret != 0)
 		tf_printf("xfer error %d\n", ret);*/
 
-
-    ttbr_dest = 0x700000;
-	__asm__ __volatile__("msr ttbr0_el3, %0" : : "r" (ttbr_dest): "memory");
-    /*tcr = 0x80823518;
+/*
+    ttbr = 0x700000;
+	__asm__ __volatile__("msr ttbr0_el3, %0" : : "r" (ttbr): "memory");
+    tcr = 0x80823518;
     __asm__ __volatile__("msr tcr_el3, %0" : : "r" (tcr) : "memory");
     attr = 0xFFFFFFFFFF000044;
-    __asm__ __volatile__("msr mair_el3, %0" : : "r" (attr) : "memory");*/
-    
-    dsb();
-    tlbialle3();
-    dsb();
-    isb();
-  
-    flush_dcache_range(0x8031000000ULL, (256 * 1024));
-
-	__asm__ __volatile__ ("7: b 7b");
-    entry = (void (*)(void *, void *))0;
+    __asm__ __volatile__("msr mair_el3, %0" : : "r" (attr) : "memory");
+*/
+    entry = (void (*)(void *, void *)) 0;
     entry(NULL, NULL);
+  
+    branch_and_return();
+    /*flush_dcache_range(0x8031000000ULL, (256 * 1024));*/
 
 	return;			/* SHOULD NEVER GET HERE!!! */
 }
-
+#endif
 /*******************************************************************************
  * Return a pointer to the 'entry_point_info' structure of the next image for
  * the security state specified. BL3-3 corresponds to the non-secure image type
@@ -590,6 +622,10 @@ entry_point_info_t *bl31_plat_get_next_image_ep_info(uint32_t type)
 	bl33_ep_info.args.arg0 = read_mpidr() & 0xffff;
 	SET_PARAM_HEAD(&bl33_ep_info, PARAM_IMAGE_BINARY, VERSION_1, NON_SECURE);
 
+	bl32_ep_info.pc = 0x00000000;
+	bl32_ep_info.spsr = SPSR_64(MODE_EL3, MODE_SP_ELX, DISABLE_ALL_EXCEPTIONS);
+	bl32_ep_info.args.arg0 = read_mpidr() & 0xffff;
+	SET_PARAM_HEAD(&bl32_ep_info, PARAM_IMAGE_BINARY, VERSION_1, SECURE);
 	return next_image_info;
 }
 
@@ -709,6 +745,7 @@ void bl31_platform_setup(void)
  * Perform the very early platform specific architectural setup here. At the
  * moment this is only intializes the mmu in a quick and dirty way.
  ******************************************************************************/
+extern void configure_mmu_el_mb(void);
 void bl31_plat_arch_setup()
 {
 #if USE_COHERENT_MEM
@@ -717,6 +754,7 @@ void bl31_plat_arch_setup()
     printf("mb: %s() configuring MMU\n", __func__);
 	configure_mmu_el3(BL31_BASE, BL31_LIMIT,
 			  BL31_RO_BASE, BL31_RO_LIMIT);
+    /*configure_mmu_el_mb();*/
 }
 
 void

@@ -49,7 +49,9 @@
 	msr	sctlr_el3, x0
 	isb
 
-#if IMAGE_BL31
+
+#define IMAGE_BL32
+#if defined(IMAGE_BL31) || defined(IMAGE_BL32)
 	/* ---------------------------------------------------------------------
 	 * Initialise the per-cpu cache pointer to the CPU.
 	 * This is done early to enable crash reporting to have access to crash

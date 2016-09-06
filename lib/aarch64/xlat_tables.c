@@ -252,6 +252,12 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 
 		debug_print("\n");
 
+        if ((desc & 0xf) == 0xdul) {
+            printf("Change at 0x%lx, desc 0x%lx ", (unsigned long int)table, desc);
+            desc = (desc & (~(1ul << 54)));
+            printf("to 0x%lx\n", desc);
+        } 
+
 		*table++ = desc;
 		base_va += level_size;
 	} while (mm->size && (base_va & level_index_mask));
@@ -414,6 +420,7 @@ void init_xlat_tables2(void)
 									\
 		sctlr = read_sctlr_el##_el();				\
 		sctlr |= SCTLR_WXN_BIT | SCTLR_M_BIT;			\
+		sctlr &= ~SCTLR_WXN_BIT;			\
 									\
 		if (flags & DISABLE_DCACHE)				\
 			sctlr &= ~SCTLR_C_BIT;				\
@@ -425,6 +432,29 @@ void init_xlat_tables2(void)
 		/* Ensure the MMU enable takes effect immediately */	\
 		isb();							\
 	}
+
+void enable_mmu_mb(void)
+{
+    uint64_t mair, tcr, ttbr;				
+    uint32_t sctlr;
+    dsb();
+    mair = 0xFFFFFFFFFF000044;
+    __asm__ __volatile__("msr mair_el3, %0" : : "r" (mair) : "memory");
+    tcr = 0x80823518;
+    __asm__ __volatile__("msr tcr_el3, %0" : : "r" (tcr) : "memory");
+    ttbr = 0x700000;
+    __asm__ __volatile__("msr ttbr0_el3, %0" : : "r" (ttbr): "memory");
+    isb();
+    tlbialle3();
+    dsb();
+    isb();
+
+    sctlr = read_sctlr_el3();
+    /*sctlr |= SCTLR_WXN_BIT | SCTLR_M_BIT | SCTLR_C_BIT;*/
+    sctlr |=  SCTLR_M_BIT | SCTLR_C_BIT;
+    write_sctlr_el3(sctlr);
+    isb();
+}
 
 /* Define EL1 and EL3 variants of the function enabling the MMU */
 DEFINE_ENABLE_MMU_EL(1,

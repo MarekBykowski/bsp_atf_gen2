@@ -45,6 +45,7 @@ void *cm_get_context(uint32_t security_state)
 {
 	assert(security_state <= NON_SECURE);
 
+    security_state = NON_SECURE;
 	return get_cpu_data(cpu_context[security_state]);
 }
 

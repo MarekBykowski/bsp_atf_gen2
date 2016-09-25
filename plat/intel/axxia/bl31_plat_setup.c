@@ -44,6 +44,7 @@
 
 #include <axxia_def.h>
 #include <axxia_private.h>
+#include "mmu_in_atf.c"
 
 axxia_configuration_t axxia_configuration;
 
@@ -128,7 +129,6 @@ void syscache_only_mode(void)
 	*/
 
 	display_mapping(0);
-
 	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
 		junk = mmio_read_32(address);
 		junk = junk;
@@ -145,6 +145,14 @@ void syscache_only_mode(void)
 	isb();
 
 	display_mapping(0);
+    
+    {
+    uint32_t *addr = (uint32_t *) 0;
+    for (i=0; i<4; i++)
+        printf("mb: value 0x%x at addr %p\n", *(addr+i), (void*)(addr+i));
+    
+}
+    
 
 	/* Jump at 0 address. */
 	entry = (void (*)(void *, void *)) 0;
@@ -215,6 +223,9 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 	 * after a warm boot. BL1 should have already enabled CCI coherency for
 	 * this cluster during cold boot.
 	 */
+if IS_6700()
+	ccn_init(XLF_CCN_BASE);
+else 
 	ccn_init(CCN504_BASE);
 }
 
@@ -294,6 +305,7 @@ void bl31_platform_setup(void)
  * Perform the very early platform specific architectural setup here. At the
  * moment this is only intializes the mmu in a quick and dirty way.
  ******************************************************************************/
+#if 0
 void bl31_plat_arch_setup()
 {
 #if USE_COHERENT_MEM
@@ -302,6 +314,22 @@ void bl31_plat_arch_setup()
 	configure_mmu_el3(BL31_BASE, BL31_LIMIT,
 			  BL31_RO_BASE, BL31_RO_LIMIT);
 }
+#else
+void bl31_plat_arch_setup()
+{
+#if USE_COHERENT_MEM
+#error "Axxia Does Not Support Coherenet Memory in Bl31!"
+#endif
+    setup_pt();
+    set_ttbr_tcr_mair(3, 0x8031030000,
+                    TCR_EL3_RSVD | TCR_FLAGS | TCR_EL3_IPS_BITS,
+                    MEMORY_ATTRIBUTES);
+    unsigned int val = get_sctlr();
+    printf("mb: sctlr 0x%x\n", val);
+    __asm__ __volatile__("ll: b ll");
+    set_sctlr(val| CR_M);
+}
+#endif
 
 void
 bl31_plat_enable_mmu(uint32_t flags)

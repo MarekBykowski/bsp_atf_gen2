@@ -36,14 +36,13 @@
 #include <platform_def.h>
 #include <string.h>
 #include <xlat_tables.h>
+#include <mmio.h>
 
 #ifndef DEBUG_XLAT_TABLE
 #define DEBUG_XLAT_TABLE 0
 #endif
 
-#if DEBUG_XLAT_TABLE
 #include <stdio.h>
-#endif
 
 #if DEBUG_XLAT_TABLE
 #define debug_print(...) printf(__VA_ARGS__)
@@ -77,16 +76,14 @@ static mmap_region_t mmap[MAX_MMAP_REGIONS + 1];
 
 static void print_mmap(void)
 {
-#if DEBUG_XLAT_TABLE
-	debug_print("mmap:\n");
+    printf("mmap:C ns rw mem\n");
 	mmap_region_t *mm = mmap;
 	while (mm->size) {
-		debug_print(" %010lx %010lx %10lx %x\n", mm->base_va,
+		printf(" %010lx %010lx %10lx %x\n", mm->base_va,
 					mm->base_pa, mm->size, mm->attr);
 		++mm;
 	};
-	debug_print("\n");
-#endif
+	printf("\n");
 }
 
 void mmap_add_region(unsigned long base_pa, unsigned long base_va,
@@ -209,6 +206,7 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 
 	debug_print("New xlat table:\n");
 
+    printf("mb: table %p\n", (void*) table);
 	do  {
 		unsigned long desc = UNSET_DESC;
 
@@ -290,7 +288,7 @@ void init_xlat_tables(void)
 	tcr_ps_bits = calc_physical_addr_size_bits(max_pa);
 	assert(max_va < ADDR_SPACE_SIZE);
 }
-
+#if 0
 /*******************************************************************************
  * Macro generating the code for the function enabling the MMU in the given
  * exception level, assuming that the pagetables have already been created.
@@ -348,7 +346,6 @@ void init_xlat_tables(void)
 			sctlr &= ~SCTLR_C_BIT;				\
 		else							\
 			sctlr |= SCTLR_C_BIT;				\
-									\
 		write_sctlr_el##_el(sctlr);				\
 									\
 		/* Ensure the MMU enable takes effect immediately */	\
@@ -356,9 +353,70 @@ void init_xlat_tables(void)
 	}
 
 /* Define EL1 and EL3 variants of the function enabling the MMU */
-DEFINE_ENABLE_MMU_EL(1,
-		(tcr_ps_bits << TCR_EL1_IPS_SHIFT),
-		tlbivmalle1)
 DEFINE_ENABLE_MMU_EL(3,
 		TCR_EL3_RES1 | (tcr_ps_bits << TCR_EL3_PS_SHIFT),
 		tlbialle3)
+#endif
+
+
+void enable_mmu_el3(uint32_t flags)				
+{								
+    uint64_t mair, tcr, ttbr;				
+    uint32_t sctlr;						
+	unsigned long address = 0x8031000000;
+	unsigned int junk;
+	int i;
+                                
+    assert(IS_IN_EL(3));					
+    assert((read_sctlr_el3() & SCTLR_M_BIT) == 0);	
+                                
+    /* Set attributes in the right indices of the MAIR */	
+    mair = MAIR_ATTR_SET(ATTR_ZZZ, ATTR_ZZZ_INDEX);		
+    mair |= MAIR_ATTR_SET(ATTR_SO, ATTR_SO_INDEX);		
+    mair |= MAIR_ATTR_SET(ATTR_DEVICE, ATTR_DEVICE_INDEX);	
+    mair |= MAIR_ATTR_SET(ATTR_IWBWA_OWBWA_NTR,		
+            ATTR_IWBWA_OWBWA_NTR_INDEX);		
+    write_mair_el3(mair);				
+                                
+    /* Invalidate TLBs at the current exception level */	
+    tlbialle3();						
+                                
+    /* Set TCR bits as well. */				
+    /* Inner & outer WBWA & shareable + T0SZ = 32 */	
+    tcr = TCR_SH_INNER_SHAREABLE | TCR_RGN_OUTER_WBA |	
+        TCR_RGN_INNER_WBA |				
+        (64 - __builtin_ctzl(ADDR_SPACE_SIZE));		
+    tcr |= TCR_EL3_RES1 | (tcr_ps_bits << TCR_EL3_PS_SHIFT);					
+    write_tcr_el3(tcr);					
+                                
+    /* Set TTBR bits as well */				
+    ttbr = (uint64_t) l0_xlation_table;			
+    write_ttbr0_el3(ttbr);				
+                                
+    /* Ensure all translation table writes have drained */	
+    /* into memory, the TLB invalidation is complete, */	
+    /* and translation register writes are committed */	
+    /* before enabling the MMU */				
+    dsb();							
+    isb();							
+                                
+    sctlr = read_sctlr_el3();				
+    sctlr |= SCTLR_M_BIT;					
+    sctlr &= ~SCTLR_WXN_BIT;				
+                                
+    if (flags & DISABLE_DCACHE)				
+        sctlr &= ~SCTLR_C_BIT;				
+    else							
+        sctlr |= SCTLR_C_BIT;				
+__asm__  __volatile__("piess: b piess"); 
+    write_sctlr_el3(sctlr);				
+                                
+    /* Ensure the MMU enable takes effect immediately */	
+    isb();							
+
+	for (i = 0; i < 256*1024; i += sizeof(unsigned int)) {
+		junk = mmio_read_32(address);
+		junk = junk;
+		address += sizeof(unsigned int);
+	}
+}

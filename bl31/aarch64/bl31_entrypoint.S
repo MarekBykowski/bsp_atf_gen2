@@ -104,6 +104,8 @@ func bl31_entrypoint
 	 * Perform platform specific early arch. setup
 	 * ---------------------------------------------
 	 */
+    /*ldr x10, =0x803103f000
+    bic sp, x10, #0xf*/
 	bl	bl31_early_platform_setup
 	bl	bl31_plat_arch_setup
 

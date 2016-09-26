@@ -87,6 +87,10 @@ SECTIONS
      */
     __RW_START__ = . ;
 
+    . = ALIGN(16);
+    . += (8*1024);
+    __STACK = .;
+
     .data . : {
         __DATA_START__ = .;
         *(.data*)

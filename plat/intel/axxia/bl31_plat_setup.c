@@ -145,6 +145,7 @@ void syscache_only_mode(void)
 	isb();
 
 	display_mapping(0);
+    /*__asm__ __volatile__("k: b k\n");*/
 
 	/* Jump at 0 address. */
 	entry = (void (*)(void *, void *)) 0;
@@ -699,7 +700,7 @@ set_cluster_coherency(unsigned cluster, unsigned state)
   ------------------------------------------------------------------------------
   xlf_emu_dsps
 */
-
+#if 0
 static void
 xlf_emu_dsps(void)
 {
@@ -792,7 +793,7 @@ xlf_dsps(void)
 
 	return;
 }
-
+#endif
 /*
   ------------------------------------------------------------------------------
   bl31_plat_runtime_setup
@@ -804,10 +805,10 @@ bl31_plat_runtime_setup(void)
 	if (0 != set_cluster_coherency(0, 1))
 		ERROR("Adding cluster 0 to the coherency domain failed!\n");
 
-	if (IS_6700() && IS_EMU())
+	/*if (IS_6700() && IS_EMU())
 		xlf_emu_dsps();
 	else if (IS_6700())
-		xlf_dsps();
+		xlf_dsps();*/
 
 	if (IS_SYSCACHE_ONLY())
 	        syscache_only_mode();

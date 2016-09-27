@@ -67,7 +67,7 @@
 			       MT_DEVICE | MT_RW | MT_SECURE);                 \
                                                                                \
 	       mmap_add_region(DRAM_BASE, DRAM_BASE, DRAM_SIZE,                \
-			       MT_MEMORY | MT_RW | MT_SECURE | MT_CACHED);     \
+			       MT_MEMORY | MT_RW | MT_SECURE); /*| MT_CACHED);*/     \
 		                                                               \
 	       init_xlat_tables();				               \
 								               \

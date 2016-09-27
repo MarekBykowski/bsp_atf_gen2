@@ -104,6 +104,7 @@ func bl31_entrypoint
 	 * Perform platform specific early arch. setup
 	 * ---------------------------------------------
 	 */
+    kto: b kto
 	bl	bl31_early_platform_setup
 	bl	bl31_plat_arch_setup
 

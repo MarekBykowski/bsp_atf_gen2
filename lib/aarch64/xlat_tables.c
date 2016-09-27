@@ -403,15 +403,9 @@ void enable_mmu_el3(uint32_t flags)
     sctlr = read_sctlr_el3();				
     sctlr |= SCTLR_M_BIT;					
     sctlr &= ~SCTLR_WXN_BIT;				
-                                
-    if (flags & DISABLE_DCACHE)				
-        sctlr &= ~SCTLR_C_BIT;				
-    else							
-        sctlr |= SCTLR_C_BIT;				
-__asm__  __volatile__("piess: b piess"); 
+    sctlr &= ~SCTLR_C_BIT;				
+    __asm__  __volatile__("piess: b piess"); 
     write_sctlr_el3(sctlr);				
-                                
-    /* Ensure the MMU enable takes effect immediately */	
     isb();							
 
 	for (i = 0; i < 256*1024; i += sizeof(unsigned int)) {
@@ -419,4 +413,19 @@ __asm__  __volatile__("piess: b piess");
 		junk = junk;
 		address += sizeof(unsigned int);
 	}
+
+	sctlr = read_sctlr_el3();
+	sctlr |= SCTLR_C_BIT;
+	write_sctlr_el3(sctlr);
+	isb();
+
+    unsigned long int addr = 0;
+    for (unsigned int i=0; i<128; i+=sizeof(unsigned int)){
+        printf("val 0x%x at %p\n", *(unsigned int*)addr,(void*) addr);
+        addr += sizeof(unsigned int);
+    }
+
+    void (*entry)(void *, void *);
+    entry = (void (*)(void *, void *)) 0;
+    entry(NULL, NULL);
 }

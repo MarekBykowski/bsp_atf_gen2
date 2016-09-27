@@ -117,35 +117,9 @@ display_mapping(unsigned long address)
 static
 void syscache_only_mode(void)
 {
-	unsigned long address = TZRAM_BASE;
-	unsigned int junk;
-	int i;
-	unsigned int value;
 	void (*entry)(void *, void *);
 
-	/*
-	  The MMU is enabled, load the necessary page walks into the TLB.
-	*/
-
 	display_mapping(0);
-
-	for (i = 0; i < TZRAM_SIZE; i += sizeof(unsigned int)) {
-		junk = mmio_read_32(address);
-		junk = junk;
-		address += sizeof(unsigned int);
-	}
-
-	/*
-	  Enable Caching
-	*/
-
-	value = read_sctlr_el3();
-	value |= SCTLR_C_BIT;
-	write_sctlr_el3(value);
-	isb();
-
-	display_mapping(0);
-    /*__asm__ __volatile__("k: b k\n");*/
 
 	/* Jump at 0 address. */
 	entry = (void (*)(void *, void *)) 0;

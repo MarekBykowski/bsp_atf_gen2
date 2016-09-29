@@ -152,7 +152,7 @@ static unsigned long mmap_desc(unsigned attr, unsigned long addr_pa,
 		if ((attr & MT_CACHED) && (attr & MT_RW))
 			desc &= ~(UPPER_ATTRS(XN));
 		else if (attr & MT_RW)
-			desc |= UPPER_ATTRS(XN);
+		    desc &= ~(UPPER_ATTRS(XN));
 	} else {
 		desc |= LOWER_ATTRS(ATTR_DEVICE_INDEX | OSH);
 		desc |= UPPER_ATTRS(XN);
@@ -383,7 +383,7 @@ void enable_mmu_el3(uint32_t flags)
                                 
     /* Set TCR bits as well. */				
     /* Inner & outer WBWA & shareable + T0SZ = 32 */	
-    tcr = TCR_SH_INNER_SHAREABLE | TCR_RGN_OUTER_WBA |	
+    tcr = TCR_SH_OUTER_SHAREABLE | TCR_RGN_OUTER_WBA |	
         TCR_RGN_INNER_WBA |				
         (64 - __builtin_ctzl(ADDR_SPACE_SIZE));		
     tcr |= TCR_EL3_RES1 | (tcr_ps_bits << TCR_EL3_PS_SHIFT);					
@@ -404,7 +404,6 @@ void enable_mmu_el3(uint32_t flags)
     sctlr |= SCTLR_M_BIT;					
     sctlr &= ~SCTLR_WXN_BIT;				
     sctlr &= ~SCTLR_C_BIT;				
-    __asm__  __volatile__("piess: b piess"); 
     write_sctlr_el3(sctlr);				
     isb();							
 
@@ -414,13 +413,14 @@ void enable_mmu_el3(uint32_t flags)
 		address += sizeof(unsigned int);
 	}
 
+#if 0
+    __asm__  __volatile__("piess: b piess"); 
 	sctlr = read_sctlr_el3();
 	sctlr |= SCTLR_C_BIT;
 	write_sctlr_el3(sctlr);
 	isb();
-
     unsigned long int addr = 0;
-    for (unsigned int i=0; i<128; i+=sizeof(unsigned int)){
+    for (int i=0; i<128; i+=sizeof(unsigned int)){
         printf("val 0x%x at %p\n", *(unsigned int*)addr,(void*) addr);
         addr += sizeof(unsigned int);
     }
@@ -428,4 +428,5 @@ void enable_mmu_el3(uint32_t flags)
     void (*entry)(void *, void *);
     entry = (void (*)(void *, void *)) 0;
     entry(NULL, NULL);
+#endif
 }

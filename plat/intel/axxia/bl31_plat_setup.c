@@ -118,9 +118,20 @@ static
 void syscache_only_mode(void)
 {
 	void (*entry)(void *, void *);
+    uint32_t sctlr;						
 
 	display_mapping(0);
 
+    __asm__  __volatile__("piess: b piess"); 
+	sctlr = read_sctlr_el3();
+	sctlr |= SCTLR_C_BIT;
+	write_sctlr_el3(sctlr);
+	isb();
+    unsigned long int addr = 0;
+    for (int i=0; i<128; i+=sizeof(unsigned int)){
+        printf("val 0x%x at %p\n", *(unsigned int*)addr,(void*) addr);
+        addr += sizeof(unsigned int);
+    }
 	/* Jump at 0 address. */
 	entry = (void (*)(void *, void *)) 0;
 	entry(NULL, NULL);
@@ -601,7 +612,7 @@ set_cluster_coherency(unsigned cluster, unsigned state)
 	unsigned int value;
 	unsigned long dickens_base;
 
-	INFO("%s cluster %u %s the coherency domain.\n",
+	printf("%s cluster %u %s the coherency domain.\n",
 	     state == 1 ? "Adding" : "Removing",
 	     cluster,
 	     state == 1 ? "to" : "from");
@@ -641,6 +652,7 @@ set_cluster_coherency(unsigned cluster, unsigned state)
 		if (0 != upper_half)
 			offset += 4;
 
+        printf("state %u -> addr 0x%lx val mask %u\n",state, offset + 0x220, mask);
 		if (0 == state)
 			mmio_write_32((uintptr_t)(offset + 0x220),
 				      (unsigned int)mask);

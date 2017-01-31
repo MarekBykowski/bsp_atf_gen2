@@ -121,7 +121,7 @@ void syscache_only_mode(void)
 	unsigned int junk;
 	int i;
 	unsigned int value;
-	void (*entry)(void *, void *);
+	//void (*entry)(void *, void *);
 
 	/*
 	  The MMU is enabled, load the necessary page walks into the TLB.
@@ -146,6 +146,8 @@ void syscache_only_mode(void)
 
 	display_mapping(0);
 
+
+#if 0
 	/* Jump at 0 address. */
 	entry = (void (*)(void *, void *)) 0;
 	entry(NULL, NULL);
@@ -155,6 +157,7 @@ void syscache_only_mode(void)
 
 	for (;;)
 		;
+#endif
 }
 
 /*******************************************************************************

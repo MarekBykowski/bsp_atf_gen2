@@ -366,6 +366,11 @@ func restore_gp_registers_callee_eret
 	ldp	 x30, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_LR]
 	msr	sp_el0, x17
 	ldp	x16, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X16]
+kot: b kot
+	mov x2, #0
+	mov x1, #0
+	mov x0, #0
+	br x0
 	eret
 endfunc	restore_gp_registers_callee_eret
 

@@ -145,6 +145,7 @@ void syscache_only_mode(void)
 	isb();
 
 	display_mapping(0);
+	return; 
 
 
 #if 0

@@ -70,8 +70,15 @@
 	isb
 
 	/* ---------------------------------------------------------------------
-	 * Enable the SError interrupt now that the exception vectors have been
-	 * setup.
+	 * Disable secure self-hosted invasive debug.
+	 * ---------------------------------------------------------------------
+	 */
+	mov_imm	x0, MDCR_DEF_VAL
+	msr	mdcr_el3, x0
+
+	/* ---------------------------------------------------------------------
+	 * Enable External Aborts and SError Interrupts now that the exception
+	 * vectors have been setup.
 	 * ---------------------------------------------------------------------
 	 */
 	msr	daifclr, #DAIF_ABT_BIT

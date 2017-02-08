@@ -70,8 +70,24 @@
 	isb
 
 	/* ---------------------------------------------------------------------
-	 * Enable the SError interrupt now that the exception vectors have been
-	 * setup.
+	 * Early set RES1 bits in SCR_EL3. Set EA bit to catch both
+	 * External Aborts and SError Interrupts in EL3 and also the SIF bit
+	 * to disable instruction fetches from Non-secure memory.
+	 * ---------------------------------------------------------------------
+	 */
+	mov	x0, #(SCR_RES1_BITS | SCR_EA_BIT | SCR_SIF_BIT)
+	msr	scr_el3, x0
+
+	/* ---------------------------------------------------------------------
+	 * Disable secure self-hosted invasive debug.
+	 * ---------------------------------------------------------------------
+	 */
+	mov_imm	x0, MDCR_DEF_VAL
+	msr	mdcr_el3, x0
+
+	/* ---------------------------------------------------------------------
+	 * Enable External Aborts and SError Interrupts now that the exception
+	 * vectors have been setup.
 	 * ---------------------------------------------------------------------
 	 */
 	msr	daifclr, #DAIF_ABT_BIT

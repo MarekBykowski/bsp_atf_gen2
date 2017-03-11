@@ -33,7 +33,9 @@
 #include <el3_common_macros.S>
 
 	.globl	bl31_entrypoint
-
+	.long __return_addr_for_el3
+	.long __sp_addr_for_el3
+	.long __vbar3_to_migrate
 
 	/* -----------------------------------------------------
 	 * bl31_entrypoint() is the cold boot entrypoint,
@@ -42,6 +44,18 @@
 	 */
 
 func bl31_entrypoint
+	/*Save lr entered with */
+	ldr x22, =__return_addr_for_el3
+	str x30, [x22]
+	/*Save sp entered in*/
+	ldr x23, =__sp_addr_for_el3
+	mov x24, sp
+	str x24, [x23]
+	/*Save VBAR_EL3 entered in*/
+	ldr x22, =__vbar3_to_migrate
+	mrs x23, vbar_el3
+	str x23, [x22]
+	
 #if !RESET_TO_BL31
 	/* ---------------------------------------------------------------
 	 * Preceding bootloader has populated x0 with a pointer to a

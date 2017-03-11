@@ -47,6 +47,30 @@
 
 axxia_configuration_t axxia_configuration;
 
+unsigned long  __return_addr_for_el3
+__section(".data");
+unsigned long  __sp_addr_for_el3
+__section(".data");
+unsigned long  __vbar3_to_migrate
+__section(".data");
+
+void *
+get_return_addr_for_el3(void)
+{
+	return &__return_addr_for_el3;
+}
+
+void *
+get_sp_addr_for_el3(void)
+{
+	return &__sp_addr_for_el3;
+}
+
+void *
+get_vbar3_to_migrate(void)
+{
+	return &__vbar3_to_migrate;
+}
 /*******************************************************************************
  * Declarations of linker defined symbols which will help us find the layout
  * of trusted RAM
@@ -173,8 +197,10 @@ entry_point_info_t *bl31_plat_get_next_image_ep_info(uint32_t type)
 
 	next_image_info = (type == NON_SECURE) ? &bl33_ep_info : &bl32_ep_info;
 
-	/* Use bl33 (u-boot) pre-loaded in RAM */
-	bl33_ep_info.pc = 0x00000000;
+	/* Return to the location SPL entered Secure Monitor from */
+	bl33_ep_info.pc = *(uintptr_t*) get_return_addr_for_el3();
+	INFO("mb: sp spl entered with: %lx\n", *(uintptr_t*) get_sp_addr_for_el3());
+	INFO("mb: vbar_el3 spl entered in: %lx\n", *(uintptr_t*) get_vbar3_to_migrate());
 
 	/* Modifed to unmask IRQ, FIQ, ABT, DBG */
 	bl33_ep_info.spsr = SPSR_64(MODE_EL2, MODE_SP_ELX, 0);

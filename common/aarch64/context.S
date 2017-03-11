@@ -42,6 +42,7 @@
 	.global	restore_gp_registers_eret
 	.global	restore_gp_registers_callee_eret
 	.global	el3_exit
+	.long __sp_addr_for_el3
 
 /* -----------------------------------------------------
  * The following function strictly follows the AArch64
@@ -339,8 +340,6 @@ func save_gp_registers
 	stp	x24, x25, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X24]
 	stp	x26, x27, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X26]
 	stp	x28, x29, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X28]
-	mrs	x18, sp_el0
-	str	x18, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_SP_EL0]
 	ret
 endfunc save_gp_registers
 
@@ -363,11 +362,14 @@ func restore_gp_registers_callee_eret
 	ldp	x24, x25, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X24]
 	ldp	x26, x27, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X26]
 	ldp	x28, x29, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X28]
-	ldp	 x30, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_LR]
+	ldp	x30, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_LR]
 	msr	sp_el0, x17
 	ldp	x16, x17, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X16]
 	eret
 endfunc	restore_gp_registers_callee_eret
+
+func set_el2_regs_before_eret
+endfunc set_el2_regs_before_eret
 
 	/* -----------------------------------------------------
 	 * This routine assumes that the SP_EL3 is pointing to
@@ -395,10 +397,33 @@ func el3_exit
 	msr	scr_el3, x18
 	msr	spsr_el3, x16
 	msr	elr_el3, x17
-	mov x2, #0
-	mov x1, #0
-	mov x0, #0
-	br x0
+
+	msr	elr_el2, x17  /*Restore elr_el2, that is lr after eret*/
+
+	msr cptr_el3, xzr       /* Disable coprocessor traps to EL3 */ 
+	mov x0, #0x33ff                                            
+	msr cptr_el2, x0    /* Disable coprocessor traps to EL2 */ 
+
+	/* Initialize Generic Timers */
+	msr cntvoff_el2, xzr           
+
+	/* Initialize SCTLR_EL2                                     
+	 *                                                          
+	 * setting RES1 bits (29,28,23,22,18,16,11,5,4) to 1        
+	 * and RES0 bits (31,30,27,26,24,21,20,17,15-13,10-6) +     
+	 * EE,WXN,I,SA,C,A,M to 0                                   
+	 */                                                         
+	mov x0, #0x0830                
+	movk x0, #0x30C5, lsl #16   
+	msr sctlr_el2, x0              
+
+	ldr x0, =__sp_addr_for_el3 /* Restore SP */
+	ldr x0, [x0]
+	msr sp_el2, x0
+	
+	ldr x0, =__vbar3_to_migrate /* Restore VBAR */                    
+	ldr x0, [x0]
+    msr vbar_el2, x0  
 
 	/* Restore saved general purpose registers and return */
 	b	restore_gp_registers_eret

@@ -68,6 +68,7 @@
 #define CTX_GPREG_X29		0xe8
 #define CTX_GPREG_LR		0xf0
 #define CTX_GPREG_SP_EL0	0xf8
+#define CTX_GPREG_SP_EL3	0xfc
 #define CTX_GPREGS_END		0x100
 
 /*******************************************************************************

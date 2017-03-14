@@ -44,7 +44,7 @@
  ******************************************************************************/
 
 /* Size of cacheable stacks */
-#define PLATFORM_STACK_SIZE		0x800
+#define PLATFORM_STACK_SIZE		0x80
 
 #define FIRMWARE_WELCOME_STR		"Booting Trusted Firmware\n"
 
@@ -110,7 +110,7 @@
 #define TZROM_BASE			0x80FFFF0000
 #define TZROM_SIZE			0x0000008000
 
-#define TZRAM_BASE			0x8031001000
+#define TZRAM_BASE			0x803101b000
 #define TZRAM_SIZE			0x000003f000
 
 /*******************************************************************************
@@ -144,7 +144,7 @@
  * Platform specific page table and MMU setup constants
  ******************************************************************************/
 #define ADDR_SPACE_SIZE                 (1ULL << 40)
-#define MAX_XLAT_TABLES			8
+#define MAX_XLAT_TABLES			3
 #define MAX_MMAP_REGIONS                16
 
 /*******************************************************************************

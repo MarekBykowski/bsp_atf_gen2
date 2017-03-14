@@ -48,27 +48,19 @@
 				  unsigned long ro_start,	               \
 				  unsigned long ro_limit)	               \
 	{							               \
-	       mmap_add_region(ro_start, ro_start,		               \
-			       ro_limit - ro_start,		               \
-			       MT_MEMORY | MT_RO | MT_SECURE);	               \
-	       mmap_add_region(ro_limit, ro_limit,                             \
-			       TZRAM_SIZE - (ro_limit - ro_start),             \
+	       mmap_add_region(total_base, total_base,		               \
+			       total_size - total_base,		               \
 			       MT_MEMORY | MT_RW | MT_SECURE);	               \
+															\
+	       mmap_add_region(ro_start, ro_start,                             \
+			       ro_limit - ro_start,             \
+			       MT_MEMORY | MT_RO | MT_SECURE);	               \
                                                                                \
 	       if (IS_6700())                                                  \
-		       mmap_add_region(XLF_CCN_BASE, XLF_CCN_BASE,             \
-				       XLF_CCN_SIZE,			       \
-				       MT_DEVICE | MT_RW | MT_SECURE);         \
-                                                                               \
-	       mmap_add_region(DEVICE0_BASE, DEVICE0_BASE, DEVICE0_SIZE,       \
-			       MT_DEVICE | MT_RW | MT_SECURE);                 \
-		                                                               \
-	       mmap_add_region(DEVICE1_BASE, DEVICE1_BASE, DEVICE1_SIZE,       \
+		       mmap_add_region(XLF_CCN_BASE, XLF_CCN_BASE,         \
+				   DEVICE1_BASE + DEVICE1_SIZE - XLF_CCN_BASE,			\
 			       MT_DEVICE | MT_RW | MT_SECURE);                 \
                                                                                \
-	       mmap_add_region(DRAM_BASE, DRAM_BASE, DRAM_SIZE,                \
-			       MT_MEMORY | MT_RW | MT_SECURE | MT_CACHED);     \
-		                                                               \
 	       init_xlat_tables();				               \
 								               \
 	       enable_mmu_el##_el(DISABLE_DCACHE);		               \

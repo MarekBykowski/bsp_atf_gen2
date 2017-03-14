@@ -179,6 +179,9 @@ SECTIONS
     __BL31_END__ = .;
 
     __BSS_SIZE__ = SIZEOF(.bss);
+	xlat_table_size = SIZEOF(xlat_table);
+	stacks_size = SIZEOF(stacks);
+	ro_size = SIZEOF(ro);
 #if USE_COHERENT_MEM
     __COHERENT_RAM_UNALIGNED_SIZE__ =
         __COHERENT_RAM_END_UNALIGNED__ - __COHERENT_RAM_START__;

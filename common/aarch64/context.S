@@ -425,6 +425,7 @@ func el3_exit
 	ldr x0, [x0]
     msr vbar_el2, x0  
 
+	eret
 	/* Restore saved general purpose registers and return */
 	b	restore_gp_registers_eret
 endfunc el3_exit

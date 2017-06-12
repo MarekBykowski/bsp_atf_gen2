@@ -47,6 +47,27 @@
 
 axxia_configuration_t axxia_configuration;
 
+unsigned long  __return_addr_for_el3 __section(".data");
+unsigned long  __sp_addr_for_el3 __section(".data");
+unsigned long  __vbar3_to_migrate __section(".data");
+
+void *
+get_return_addr_for_el3(void)
+{
+	return &__return_addr_for_el3;
+}
+
+void *
+get_sp_addr_for_el3(void)
+{
+	return &__sp_addr_for_el3;
+}
+
+void *
+get_vbar3_to_migrate(void)
+{
+	return &__vbar3_to_migrate;
+}
 /*******************************************************************************
  * Cortex-A57 doesn't have the Cache Protection enabled by default. Query
  * whether the Cache Protection was enabled in BL2 (u-boot-spl) by cpu0.
@@ -156,6 +177,8 @@ void syscache_only_mode(void)
 	isb();
 
 	display_mapping(0);
+	return;
+
 
 	/* Jump at 0 address. */
 	entry = (void (*)(void *, void *)) 0;
@@ -180,8 +203,10 @@ entry_point_info_t *bl31_plat_get_next_image_ep_info(uint32_t type)
 
 	next_image_info = (type == NON_SECURE) ? &bl33_ep_info : &bl32_ep_info;
 
-	/* Use bl33 (u-boot) pre-loaded in RAM */
-	bl33_ep_info.pc = 0x00000000;
+	/* Return to the location U-Boot entered Secure Monitor from */
+	bl33_ep_info.pc = *(uintptr_t*) get_return_addr_for_el3();
+	INFO("We entered TF with Uboot's sp = 0x%lx and vbar = 0x%lx\n",
+	 *(uintptr_t*) get_sp_addr_for_el3(), *(uintptr_t*) get_vbar3_to_migrate());
 
 	/* Modifed to unmask IRQ, FIQ, ABT, DBG */
 	bl33_ep_info.spsr = SPSR_64(MODE_EL2, MODE_SP_ELX, 0);

@@ -55,6 +55,7 @@ typedef struct axxia_configuration {
 	axxia_option_t option;
 	unsigned int per_clock_hz;
 	unsigned int baud_rate;
+	unsigned long entered_at;
 } axxia_configuration_t;
 
 extern axxia_configuration_t axxia_configuration;

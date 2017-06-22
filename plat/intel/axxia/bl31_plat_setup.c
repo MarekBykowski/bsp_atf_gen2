@@ -197,10 +197,10 @@ entry_point_info_t *bl31_plat_get_next_image_ep_info(uint32_t type)
 
 	next_image_info = (type == NON_SECURE) ? &bl33_ep_info : &bl32_ep_info;
 
-	/* Return to the location SPL entered Secure Monitor from */
+	/* Return to the location U-Boot entered Secure Monitor from */
 	bl33_ep_info.pc = *(uintptr_t*) get_return_addr_for_el3();
-	INFO("mb: sp spl entered with: %lx\n", *(uintptr_t*) get_sp_addr_for_el3());
-	INFO("mb: vbar_el3 spl entered in: %lx\n", *(uintptr_t*) get_vbar3_to_migrate());
+	INFO("Before ATF Uboot sp 0x%lx and vbar 0x%lx\n",
+	 *(uintptr_t*) get_sp_addr_for_el3(), *(uintptr_t*) get_vbar3_to_migrate());
 
 	/* Modifed to unmask IRQ, FIQ, ABT, DBG */
 	bl33_ep_info.spsr = SPSR_64(MODE_EL2, MODE_SP_ELX, 0);
@@ -237,12 +237,13 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 		     axxia_configuration.per_clock_hz,
 		     axxia_configuration.baud_rate);
 
-	INFO("Options: %s, %s, %s, %u MHz, %u\n",
+	INFO("Options: %s, %s, %s, %u MHz, %u Uboot branched from 0x%lx\n",
 	     target[axxia_configuration.target],
 	     platform[axxia_configuration.platform],
 	     option[axxia_configuration.option],
 	     axxia_configuration.per_clock_hz / (1000 * 1000),
-	     axxia_configuration.baud_rate);
+	     axxia_configuration.baud_rate, 
+		 axxia_configuration.entered_at);
 
 	/*
 	 * Initialise the CCN-504 driver for BL31 so that it is accessible

@@ -41,9 +41,7 @@
 #define DEBUG_XLAT_TABLE 0
 #endif
 
-#if DEBUG_XLAT_TABLE
 #include <stdio.h>
-#endif
 
 #if DEBUG_XLAT_TABLE
 #define debug_print(...) printf(__VA_ARGS__)
@@ -77,16 +75,14 @@ static mmap_region_t mmap[MAX_MMAP_REGIONS + 1];
 
 static void print_mmap(void)
 {
-#if DEBUG_XLAT_TABLE
-	debug_print("mmap:\n");
+	printf("mmap:\n");
 	mmap_region_t *mm = mmap;
 	while (mm->size) {
-		debug_print(" %010lx %010lx %10lx %x\n", mm->base_va,
+		printf(" %010lx %010lx %10lx %x\n", mm->base_va,
 					mm->base_pa, mm->size, mm->attr);
 		++mm;
 	};
-	debug_print("\n");
-#endif
+	printf("\n");
 }
 
 void mmap_add_region(unsigned long base_pa, unsigned long base_va,
@@ -207,7 +203,7 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm,
 
 	assert(level <= 3);
 
-	debug_print("New xlat table:\n");
+	printf("New xlat table: %p\n",(void*)table);
 
 	do  {
 		unsigned long desc = UNSET_DESC;

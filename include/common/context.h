@@ -117,6 +117,7 @@
 #define CTX_AFSR1_EL1		0xc8
 #define CTX_CONTEXTIDR_EL1	0xd0
 #define CTX_VBAR_EL1		0xd8
+#define CTX_PMCR_EL0		0xb0
 /*
  * If the timer registers aren't saved and restored, we don't have to reserve
  * space for them in the context

@@ -86,6 +86,13 @@ func psci_entrypoint
 	 * issues.
 	 * --------------------------------------------
 	 */
+
+	mrs x0, S3_1_c15_c2_0   /* cpuactlr_el1 */  
+	/* Disable L1 D-prefetch */                 
+	bic x0, x0, #0x7<<13                        
+	msr S3_1_c15_c2_0, x0   /* cpuactlr_el1 */  
+	isb
+
 	mov	x0, #DISABLE_DCACHE
 	bl	bl31_plat_enable_mmu
 

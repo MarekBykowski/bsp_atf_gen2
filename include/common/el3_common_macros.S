@@ -176,26 +176,37 @@
 		tst	x0, x1
 		b.ne	a57_ecc	
 	a53_ecc:
-		/*
-		 * It enables ecc protection for CPU and SCU-L2 cache.
-		 * Bits [21] [22].
-		 */
-		movz	x1, #60, LSL #16
-		mrs	x0, S3_1_C11_C0_2 
-		orr	x0, x0, x1
-		msr	S3_1_C11_C0_2, x0
-	 	isb
 		b	skip_ecc
 	a57_ecc:
-		/*
-		 * This enables both L1 and L2 cache protection for A57.
-		 * Bit [21].
-		 */
+
+/*
+Aff1, bits [15:8]
+Affinity level 1. Third highest level affinity field. Cluster no.
+Aff0, bits [7:0]
+Affinity level 0. Lowest level affinity field. CPU no.
+*/
+        mrs x8, mpidr_el1
+        ubfx x7, x8, #8, #8
+        cmp x7, #1 /*is cluster 1?*/
+		b.ne do_ecc
+        ubfx x7, x8, #0, #8
+		cmp x7, 0 /*is core 0 of cluster 1?*/
+        b.ne do_ecc
+		/* cluster1, core0*/
+		adr x8, do_once
+		ldr w7, [x8]
+		cmp w7, #1
+		b.eq skip_ecc
+	do_ecc:
 		movz	x1, #0x20, LSL #16
 		mrs	x0, S3_1_C11_C0_2 
 		orr	x0, x0, x1
 		msr	S3_1_C11_C0_2, x0
 		isb
+		/*mark do once*/
+		adr x8, do_once
+		ldr w7, [x8]
+		movz w7, 1
 	skip_ecc:
 	
 	.if \_warm_boot_mailbox

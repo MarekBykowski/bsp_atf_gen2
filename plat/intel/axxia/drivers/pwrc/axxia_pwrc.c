@@ -45,6 +45,7 @@
 extern void psci_do_pwrdown_cache_maintenance(unsigned int pwr_level);
 
 #undef L2_POWER
+#define L2_POWER
 
 #define PM_WAIT_TIME (10000)
 #define IPI_IRQ_MASK (0xFFFF)
@@ -289,6 +290,9 @@ int axxia_pwrc_cpu_powerup(unsigned int reqcpu)
 	 * Then power up the L2 cache.
 	 */
 	first_cpu = axxia_pwrc_first_cpu_of_cluster(reqcpu);
+	INFO("mb: powering up cpu%u. is it first_cpu %d? If true then power up L2 memory system\n", 
+			reqcpu, (int)first_cpu);
+	printf("\n");
 	if (first_cpu) {
 
 		/* Clear all power down flags for this cluster */

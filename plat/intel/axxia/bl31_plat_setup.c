@@ -46,6 +46,7 @@
 #include <axxia_private.h>
 
 axxia_configuration_t axxia_configuration;
+unsigned do_once;
 
 /*******************************************************************************
  * Declarations of linker defined symbols which will help us find the layout

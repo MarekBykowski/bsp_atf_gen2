@@ -140,6 +140,8 @@ int psci_cpu_on_start(u_register_t target_cpu,
 		/* Restore the state on error. */
 		psci_set_aff_info_state_by_idx(target_idx, AFF_STATE_OFF);
 
+	/*mb: */
+	print_entry_point_info(ep);
 exit:
 	psci_spin_unlock_cpu(target_idx);
 	return rc;

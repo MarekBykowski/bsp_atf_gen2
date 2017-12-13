@@ -47,6 +47,16 @@ typedef enum {
 typedef enum {
 	AXXIA_NONE = 0,
 	AXXIA_SYSCACHE_ONLY = 1
+} syscache_only_mode_t;
+
+typedef enum {
+	CACHE_PROTECTION_DISABLED = 0,
+	CACHE_PROTECTION_ENABLED = 1
+} cache_protection_t;
+
+typedef struct {
+	syscache_only_mode_t syscache_only_mode;
+	cache_protection_t cache_protection;
 } axxia_option_t;
 
 typedef struct axxia_configuration {
@@ -64,7 +74,7 @@ extern axxia_configuration_t axxia_configuration;
 #define IS_SIM()  (AXXIA_SIM == axxia_configuration.platform)
 #define IS_EMU()  (AXXIA_EMU == axxia_configuration.platform)
 #define IS_HW()   (AXXIA_HW == axxia_configuration.platform)
-#define IS_SYSCACHE_ONLY() (AXXIA_SYSCACHE_ONLY == axxia_configuration.option)
+#define IS_SYSCACHE_ONLY() (AXXIA_SYSCACHE_ONLY == axxia_configuration.option.syscache_only_mode)
 
 #endif
 
@@ -74,6 +84,9 @@ extern axxia_configuration_t axxia_configuration;
 
 #define DRAM_BASE		0x0000000000
 #define DRAM_SIZE		0x0040000000
+
+/* X9 only */
+#define CONFIG_CACHE_PROTECTION
 
 /* XLF CCN */
 #define XLF_CCN_BASE	        0x4000000000

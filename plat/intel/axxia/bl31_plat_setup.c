@@ -48,6 +48,15 @@
 axxia_configuration_t axxia_configuration;
 
 /*******************************************************************************
+ * Query whether Cache Protection was enabled in BL2 (SPL U-Boot) by cpu0.
+ * If so follow up for the remaning clusters/cpus.
+ ******************************************************************************/
+void *is_cache_protection_enabled(void)
+{
+	return &axxia_configuration.option.cache_protection;
+}
+
+/*******************************************************************************
  * Declarations of linker defined symbols which will help us find the layout
  * of trusted RAM
  ******************************************************************************/
@@ -196,7 +205,9 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 #if LOG_LEVEL >= LOG_LEVEL_INFO
 	static char *target[] = { "5600", "6700" };
 	static char *platform[] = { "simulation", "emulation", "hardware" };
-	static char *option[] = { "none", "run in cache" };
+	static char *syscache_only_mode_option[] = { "none", "run in cache" };
+	static char *cache_protection_option[] = { 
+		"cache protection disabled", "cache protection enabled" };
 #endif
 
 	memcpy(&axxia_configuration, plat_params_from_bl2,
@@ -207,10 +218,11 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 		     axxia_configuration.per_clock_hz,
 		     axxia_configuration.baud_rate);
 
-	INFO("Options: %s, %s, %s, %u MHz, %u\n",
+	INFO("Options: %s, %s, %s, %s, %u MHz, %u\n",
 	     target[axxia_configuration.target],
 	     platform[axxia_configuration.platform],
-	     option[axxia_configuration.option],
+	     syscache_only_mode_option[axxia_configuration.option.syscache_only_mode],
+		 cache_protection_option[axxia_configuration.option.cache_protection],
 	     axxia_configuration.per_clock_hz / (1000 * 1000),
 	     axxia_configuration.baud_rate);
 

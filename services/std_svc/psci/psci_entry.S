@@ -69,6 +69,10 @@ func psci_entrypoint
 		_init_c_runtime=0				\
 		_exception_vectors=runtime_exceptions
 
+	
+	branch_if_a57_core x0, enable_cache_protection
+0:
+
 	/* --------------------------------------------
 	 * Enable the MMU with the DCache disabled. It
 	 * is safe to use stacks allocated in normal
@@ -110,3 +114,26 @@ wfi_spill:
 	b	wfi_spill
 endfunc psci_power_down_wfi
 
+enable_cache_protection:
+	/* --------------------------------------------
+	 * Enable Cache Protection only through PSCI, 
+	 * cpu on/off etc... cpu0 from cold boot will have
+	 * it set in SPL U-Boot. Reason is we may have 
+	 * the MMU/Caches enabled early prior to 
+	 * branching to Secure Monitor in which case
+	 * altering it from here could have 
+	 * detrimental results.
+	/* --------------------------------------------
+	bl is_cache_protection_enabled
+	ldr x1, [x0]
+	cbz x1, 0
+
+	mrs	x0, midr_el1
+	ubfx x1, x0, #4, #12
+	cmp	x1, 0xd07 /* is it Cortex A-57? then go */
+	mov x1, #0x1 << 21
+	mrs	x0, S3_1_C11_C0_2
+	orr	x0, x0, x1
+	msr	S3_1_C11_C0_2, x0
+	isb
+	b 0b

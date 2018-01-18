@@ -150,7 +150,7 @@ static unsigned long mmap_desc(unsigned attr, unsigned long addr_pa,
 		if (attr & MT_CACHED)
 			desc |= LOWER_ATTRS(ATTR_ZZZ_INDEX | ISH);
 		else
-			desc |= LOWER_ATTRS(ATTR_IWBWA_OWBWA_NTR_INDEX | ISH);
+			desc |= LOWER_ATTRS(ATTR_IWBWA_OWBWA_NTR_INDEX | NSH);
 
 		if ((attr & MT_CACHED) && (attr & MT_RW))
 			desc &= ~(UPPER_ATTRS(XN));
@@ -323,7 +323,7 @@ void init_xlat_tables(void)
 									\
 		/* Set TCR bits as well. */				\
 		/* Inner & outer WBWA & shareable + T0SZ = 32 */	\
-		tcr = TCR_SH_INNER_SHAREABLE | TCR_RGN_OUTER_WBA |	\
+		tcr = TCR_SH_NON_SHAREABLE | TCR_RGN_OUTER_WBA |	\
 			TCR_RGN_INNER_WBA |				\
 			(64 - __builtin_ctzl(ADDR_SPACE_SIZE));		\
 		tcr |= _tcr_extra;					\

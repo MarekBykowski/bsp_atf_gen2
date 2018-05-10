@@ -72,6 +72,9 @@ func psci_entrypoint
 	branch_if_a57_core x0, enable_cache_protection
 0:
 
+	branch_if_a53_core x0, disable_data_prefetch
+1:
+
 	/* --------------------------------------------
 	 * Enable the MMU with the DCache disabled. It
 	 * is safe to use stacks allocated in normal
@@ -140,3 +143,14 @@ enable_cache_protection:
 	msr	S3_1_C11_C0_2, x0
 	isb
 	b 0b
+
+	/* --------------------------------------------
+	 * Disable L1 D-prefetch
+	 * --------------------------------------------
+	 */
+disable_data_prefetch:
+	mrs x0, S3_1_c15_c2_0   /* cpuactlr_el1 */
+	bic x0, x0, #0x7<<13
+	msr S3_1_c15_c2_0, x0   /* cpuactlr_el1 */
+	isb
+	b 1b

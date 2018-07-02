@@ -230,7 +230,7 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 			       void *plat_params_from_bl2)
 {
 #if LOG_LEVEL >= LOG_LEVEL_INFO
-	static char *target[] = { "5600", "6700" };
+	static char *target[] = { "5600", "6700", "6700_B0" };
 	static char *platform[] = { "simulation", "emulation", "hardware" };
 	static char *syscache_only_mode_option[] = { "none", "run in cache" };
 	static char *cache_protection_option[] = {
@@ -649,7 +649,7 @@ initialize_cluster_info(void)
 		number_of_clusters = 12;
 
 		if (IS_SIM() || IS_HW()) {
-			if (is_xlf_a0()) {
+			if (IS_6700()) {
 				bit_by_cluster[0]  = 11;
 				bit_by_cluster[1]  = 12;
 				bit_by_cluster[2]  = 17;

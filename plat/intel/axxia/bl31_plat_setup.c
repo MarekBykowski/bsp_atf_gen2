@@ -240,10 +240,12 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 	memcpy(&axxia_configuration, plat_params_from_bl2,
 	       sizeof(axxia_configuration_t));
 
+#if 0
 	/* Initialize the console to provide early debug support */
 	console_init(PL011_UART0_BASE,
-		     axxia_configuration.per_clock_hz,
-		     axxia_configuration.baud_rate);
+		     256000000/*axxia_configuration.per_clock_hz*/,
+		     9600 /*axxia_configuration.baud_rate*/);
+#endif
 
 	INFO("Options: %s, %s, %s, %u MHz, %u\n",
 	     target[axxia_configuration.target],

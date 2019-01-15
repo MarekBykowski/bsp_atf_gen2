@@ -418,16 +418,9 @@ smc_handler64:
 	 * already have x0-x4 in place. x5 will point to a
 	 * cookie (not used now). x6 will point to the context
 	 * structure (SP_EL3) and x7 will contain flags we need
-	 * to pass to the handler Hence save x5-x7. Note that x4
-	 * only needs to be preserved for AArch32 callers but we
-	 * do it for AArch64 callers as well for convenience
-	 * -----------------------------------------------------
+	 * to pass to the handler.
 	 */
-	stp	x4, x5, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X4]
-	stp	x6, x7, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X6]
-
-	/* Save rest of the gpregs and sp_el0*/
-	save_x18_to_x29_sp_el0
+	bl	save_gp_registers
 
 	mov	x5, xzr
 	mov	x6, sp

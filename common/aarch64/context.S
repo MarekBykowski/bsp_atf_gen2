@@ -111,6 +111,7 @@ func el1_sysregs_context_save
 
 	mrs	x10, pmcr_el0
 	str	x10, [x0, #CTX_PMCR_EL0]
+	mb: b mb
 
 	/* Save AArch32 system registers if the build has instructed so */
 #if CTX_INCLUDE_AARCH32_REGS

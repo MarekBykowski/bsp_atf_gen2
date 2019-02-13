@@ -309,11 +309,42 @@ int axxia_pwrc_cpu_powerup(unsigned int reqcpu)
 
 	}
 
+#ifdef RETAIN_SECONDARY_CPUS_IN_LOOP
+	if (!first_cpu) {
+		printf("mb: #1 entrypoint 0x%x @0x8031000000\n", mmio_read_32(0x8031000000));
+		/* Set up reset vector for cpu */
+		mmio_write_32(0x8031000000, 0x14000000);
+		dsb();
+		printf("mb: #2 entrypoint 0x%x @0x8031000000\n", mmio_read_32(0x8031000000));
+	} else {
+
+		/* Set up reset vector for cpu */
+		mmio_write_32(0x8031000000,
+				(0x14000000 |
+						(axxia_sec_entry_point - 0x8031000000) / 4));
+		dsb();
+	}
+#endif
+
 	/* Set up reset vector for cpu */
 	mmio_write_32(0x8031000000,
 			(0x14000000 |
 					(axxia_sec_entry_point - 0x8031000000) / 4));
 	dsb();
+
+#ifdef ENTRYPOINT_DEBUG
+{
+	#define RESET_ADDR 0x8031000000UL
+	unsigned int imm26;
+	unsigned long opcode_at;
+	printf/*VERBOSE*/("mb: #2 opcode 0x%x @ reset addr 0x%lx\n", mmio_read_32(RESET_ADDR), RESET_ADDR);
+	imm26 =  mmio_read_32(RESET_ADDR) & 0x3ffffff;
+	imm26 *= 4; /*"imm26" times 4. See branch in a64 instruction set*/
+	opcode_at = RESET_ADDR + imm26;
+	printf/*VERBOSE*/("mb: #3 opcode 0x%x (branch to offset 0x%x) opcode 0x%x @ 0x%lx\n",
+			mmio_read_32(RESET_ADDR), imm26, mmio_read_32(opcode_at), opcode_at);
+}
+#endif
 
 	/*
 	 * Power up the CPU

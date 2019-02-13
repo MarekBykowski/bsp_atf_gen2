@@ -94,6 +94,8 @@ void runtime_svc_init(void)
 	memset(rt_svc_descs_indices, -1, sizeof(rt_svc_descs_indices));
 
 	rt_svc_descs = (rt_svc_desc_t *) RT_SVC_DESCS_START;
+	printf("mb: rt_svc_descs @ %p no of std services %d, sizeof each service %lu\n",
+			(void*) rt_svc_descs, (int) rt_svc_descs_num, (unsigned long) sizeof(rt_svc_desc_t));
 	for (index = 0; index < rt_svc_descs_num; index++) {
 
 		/*
@@ -108,6 +110,7 @@ void runtime_svc_init(void)
 					rt_svc_descs[index].name);
 			goto error;
 		}
+		printf("mb: service name %s index %u\n", rt_svc_descs[index].name, index);
 
 		/*
 		 * The runtime service may have separate rt_svc_desc_t
@@ -136,8 +139,10 @@ void runtime_svc_init(void)
 		end_idx = get_unique_oen(rt_svc_descs[index].end_oen,
 				rt_svc_descs[index].call_type);
 
-		for (; start_idx <= end_idx; start_idx++)
+		for (; start_idx <= end_idx; start_idx++) {
 			rt_svc_descs_indices[start_idx] = index;
+			printf("mb: rt_svc_descs_indices[%u] = %u\n", start_idx, rt_svc_descs_indices[start_idx]);
+		}
 	}
 
 	return;

@@ -425,16 +425,44 @@ smc_handler64:
 	mov	x5, xzr
 	mov	x6, sp
 
+	/*eg. ARM_PSCI_0_2_FN_CPU_ON = 0x84000000 + 3 = 0b1000 0100 0000 0000 0000 0000 0000 0011
+		  x16 = 0x4
+		  x15 = 0x1
+	*/
+
 	/* Get the unique owning entity number */
 	ubfx	x16, x0, #FUNCID_OEN_SHIFT, #FUNCID_OEN_WIDTH
 	ubfx	x15, x0, #FUNCID_TYPE_SHIFT, #FUNCID_TYPE_WIDTH
 	orr	x16, x16, x15, lsl #FUNCID_OEN_WIDTH
 
+	/*x16 = 0x44 (68) 
+
+		'rt_svc_descs' array. When an SMC arrives, the OEN[29:24] bits and the call 
+		type[31] bit in the function id are combined to get an index into the       
+		'rt_svc_descs_indices' array. This gives the index of the descriptor in the 
+
+	*/
+
 	adr	x11, (__RT_SVC_DESCS_START__ + RT_SVC_DESC_HANDLE)
+
+
+/* rt_svc_descs is laid in memory:
+    oem service:
+ 0x0:	1b 1b 1b x x x x x start_oen, end_oen, call_type and alignment(xxxx)
+ 0x8:	8bytes for *name
+0x10:	8bytes for init
+0x18:	8bytes for handle
+	svc service:
+0x20:	1b 1b 1b x x x x x start_oen, end_oen, call_type and alignment(xxxx)
+0x28:	8bytes for *name
+0x30:	8bytes for init
+0x38:	8bytes for handle
+*/ 
+		
 
 	/* Load descriptor index from array of indices */
 	adr	x14, rt_svc_descs_indices
-	ldrb	w15, [x14, x16]
+	ldrb	w15, [x14, x16]  /*eg. rt_svc_descs_indices[68] = 1*/
 
 	/* -----------------------------------------------------
 	 * Restore the saved C runtime stack value which will
@@ -461,8 +489,13 @@ smc_handler64:
 	 * handler = (base + off) + (index << log2(size))
 	 * -----------------------------------------------------
 	 */
-	lsl	w10, w15, #RT_SVC_SIZE_LOG2
+	lsl	w10, w15, #RT_SVC_SIZE_LOG2 /*eg. w10 = 32*/
 	ldr	x15, [x11, w10, uxtw]
+
+/*
+	load x11 with value @  __RT_SVC_DESCS_START__ + 24 (24 where handle is) + 32
+	!!!! THIS ends up with the x11 holding the address of std svc handler 
+*/
 
 	/* -----------------------------------------------------
 	 * Save the SPSR_EL3, ELR_EL3, & SCR_EL3 in case there

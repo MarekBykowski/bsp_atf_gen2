@@ -39,6 +39,7 @@
 #include <platform_def.h>
 #include <smcc_helpers.h>
 #include <string.h>
+#include <debug.h>
 
 
 /*******************************************************************************
@@ -105,6 +106,8 @@ static void cm_init_context_common(cpu_context_t *ctx, const entry_point_info_t 
 	if (security_state != SECURE)
 		scr_el3 |= SCR_NS_BIT;
 
+	printf("mb: security state %s\n", (security_state == SECURE)?"secure":"non-secure");
+
 	if (GET_RW(ep->spsr) == MODE_RW_64)
 		scr_el3 |= SCR_RW_BIT;
 
@@ -150,6 +153,7 @@ static void cm_init_context_common(cpu_context_t *ctx, const entry_point_info_t 
 	}
 
 	if (security_state == SECURE) {
+	__asm__ volatile("mb: b mb\ndsb sy\n");
 		/*
 		 * Initialise PMCR_EL0 for secure context only, setting all
 		 * fields rather than relying on hw. Some fields are
@@ -175,7 +179,10 @@ static void cm_init_context_common(cpu_context_t *ctx, const entry_point_info_t 
 
 	/* Populate EL3 state so that we've the right context before doing ERET */
 	state = get_el3state_ctx(ctx);
+	printf("mb: ctx %p el3state %p (offsetof ctx %u)\n",
+		(void*)ctx, (void*)state, (unsigned) offsetof(cpu_context_t, el3state_ctx));
 	write_ctx_reg(state, CTX_SCR_EL3, scr_el3);
+	printf("mb: scr_el3 %lx @ %lx\n", *(volatile unsigned long*)(unsigned long)state+CTX_SCR_EL3, (unsigned long)state+CTX_SCR_EL3);
 	write_ctx_reg(state, CTX_ELR_EL3, ep->pc);
 	write_ctx_reg(state, CTX_SPSR_EL3, ep->spsr);
 

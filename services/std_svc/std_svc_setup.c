@@ -105,7 +105,6 @@ uint64_t std_svc_smc_handler(uint32_t smc_fid,
 /* Register Standard Service Calls as runtime service */
 DECLARE_RT_SVC(
 		std_svc,
-
 		OEN_STD_START,
 		OEN_STD_END,
 		SMC_TYPE_FAST,

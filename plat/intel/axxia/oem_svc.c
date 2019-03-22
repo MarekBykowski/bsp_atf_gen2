@@ -72,34 +72,28 @@ uint64_t oem_svc_smc_handler(uint32_t smc_fid,
 		/* Get the DSP State */
 		value = get_dsp_state();
 		SMC_RET2(handle, 0, value);
-		break;
 	case 0xc3000001:
 		/* Set the DSP State */
 		set_dsp_state(x1);
 		SMC_RET1(handle, 0);
-		break;
 	case 0xc3000002:
 		/* Get ACTLR_EL3 */
 		__asm__ __volatile__ ("mrs %0, actlr_el3" : "=r" (value));
 		SMC_RET2(handle, 0, value);
-		break;
 	case 0xc3000003:
 		/* Set ACTLR_EL3 */
 		__asm__ __volatile__ ("msr actlr_el3, %0" : : "r" (x1));
 		isb();
 		SMC_RET1(handle, 0);
-		break;
 	case 0xc3000004:
 		/* Get ACTLR_EL2 */
 		__asm__ __volatile__ ("mrs %0, actlr_el2" : "=r" (value));
 		SMC_RET2(handle, 0, value);
-		break;
 	case 0xc3000005:
 		/* Set ACTLR_EL2 */
 		__asm__ __volatile__ ("msr actlr_el2, %0" : : "r" (x1));
 		isb();
 		SMC_RET1(handle, 0);
-		break;
 	case 0xc3000006:
 		/* Get CCN */
 		if (IS_5600())
@@ -107,7 +101,6 @@ uint64_t oem_svc_smc_handler(uint32_t smc_fid,
 		else
 			value = mmio_read_64(DICKENS_BASE_XLF + x1);
 		SMC_RET2(handle, 0, value);
-		break;
 	case 0xc3000007:
 		/* Set CCN */
 		if (IS_5600())
@@ -115,13 +108,11 @@ uint64_t oem_svc_smc_handler(uint32_t smc_fid,
 		else
 			mmio_write_64(DICKENS_BASE_XLF + x1, x2);
 		SMC_RET1(handle, 0)
-		break;
 	default:
-		break;
+		WARN("Unimplemented OEM Service Call: 0x%x\n", smc_fid);
+		SMC_RET1(handle, SMC_UNK);
 	}
 
-	WARN("Unimplemented OEM Service Call: 0x%x\n", smc_fid);
-	SMC_RET1(handle, SMC_UNK);
 }
 
 /* Register OEM Service Calls as runtime service */

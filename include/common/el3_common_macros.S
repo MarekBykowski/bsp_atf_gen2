@@ -44,6 +44,7 @@
 	 * ---------------------------------------------------------------------
 	 */
 	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
+	bic x1, x1, #SCTLR_C_BIT
 	mrs	x0, sctlr_el3
 	orr	x0, x0, x1
 	msr	sctlr_el3, x0

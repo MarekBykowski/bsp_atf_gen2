@@ -111,7 +111,7 @@ endfunc psci_do_pwrdown_cache_maintenance
 
 
 /* -----------------------------------------------------------------------
- * void psci_do_pwrup_cache_maintenance(void);
+ * void psci_do_pwrup_cache_maintenance(uint32_t flags);
  *
  * This function performs cache maintenance after this cpu is powered up.
  * Currently, this involves managing the used stack memory before turning
@@ -130,25 +130,26 @@ func psci_do_pwrup_cache_maintenance
 
 	/* ---------------------------------------------
 	 * Calculate and store the size of the used
-	 * stack memory in x1. Calculate and store the
-	 * stack base address in x0.
+	 * stack memory in x2. Calculate and store the
+	 * stack base address in x1.
 	 * ---------------------------------------------
 	 */
 	bl	plat_get_my_stack
+	mov	x2, sp
+	sub	x2, x1, x2
 	mov	x1, sp
-	sub	x1, x0, x1
-	mov	x0, sp
 	bl	inv_dcache_range
 
+	tbz x0, 1, 1f
 	/* ---------------------------------------------
 	 * Enable the data cache.
 	 * ---------------------------------------------
 	 */
-	mrs	x0, sctlr_el3
-	orr	x0, x0, #SCTLR_C_BIT
-	msr	sctlr_el3, x0
+	mrs	x1, sctlr_el3
+	orr	x1, x1, #SCTLR_C_BIT
+	msr	sctlr_el3, x1
 	isb
 
-	ldp	x29, x30, [sp], #16
+1: 	ldp	x29, x30, [sp], #16
 	ret
 endfunc psci_do_pwrup_cache_maintenance

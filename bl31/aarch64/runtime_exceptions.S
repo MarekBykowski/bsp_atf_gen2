@@ -36,8 +36,6 @@
 #include <runtime_svc.h>
 #include <services/arm_arch_svc.h>
 
-#define ESR_EL3_A64_SMC0	0x5e000000
-#define ESR_EL3_A32_SMC0	0x4e000000
 
 
 	.globl	runtime_exceptions
@@ -179,6 +177,13 @@ interrupt_exit_\label:
 	ldp	x0, x1, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X0]
 	.endm
 
+	.globl	wa_cve_2017_5715_mmu_vbar
+
+#define ESR_EL3_A64_SMC0	0x5e000000
+#define ESR_EL3_A32_SMC0	0x4e000000
+
+vector_base wa_cve_2017_5715_mmu_vbar
+
 	.macro	apply_cve_2017_5715_wa _is_sync_exception _esr_el3_val
 	stp	x0, x1, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X0]
 	mrs	x1, sctlr_el3
@@ -223,9 +228,7 @@ interrupt_exit_\label:
 	ldp	x0, x1, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_X0]
 	.endm
 
-	.section	.vectors, "ax"; .align 11
-	.align	7
-runtime_exceptions:
+vector_base runtime_exceptions
 	/* -----------------------------------------------------
 	 * Current EL with _sp_el0 : 0x0 - 0x200
 	 * -----------------------------------------------------
@@ -349,13 +352,15 @@ sync_exception_aarch64:
 	 * -----------------------------------------------------
 	 */
 #if IMAGE_BL31 && WORKAROUND_CVE_2017_5715
-#if 1
+	.if 0
+	mrs x9, mpidr_el1
+	bic x9, x9, #0x80000000
+	cbz x9, 2f 
+1: b 1b
+	.endif
 	apply_cve_2017_5715_wa _is_sync_exception=1  _esr_el3_val=ESR_EL3_A64_SMC0
-#else
-	apply_workaround
 #endif
-#endif
-	handle_sync_exception
+2:	handle_sync_exception
 	check_vector_size sync_exception_aarch64
 
 	.align	7

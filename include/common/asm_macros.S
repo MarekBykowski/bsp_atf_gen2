@@ -32,6 +32,18 @@
 
 #include <arch.h>
 
+/*
+ * Declare the exception vector table, enforcing it is aligned on a
+ * 2KB boundary, as required by the ARMv8 architecture.
+ * Use zero bytes as the fill value to be stored in the padding bytes
+ * so that it inserts illegal AArch64 instructions. This increases
+ * security, robustness and potentially facilitates debugging.
+ */
+	.macro vector_base  label, section_name=.vectors
+	.section \section_name, "ax"
+	.align 11, 0
+	\label:
+	.endm
 
 	.macro	func_prologue
 	stp	x29, x30, [sp, #-0x10]!

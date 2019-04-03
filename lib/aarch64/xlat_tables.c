@@ -41,7 +41,7 @@
 #define DEBUG_XLAT_TABLE 0
 #endif
 
-#if DEBUG_XLAT_TABLE
+#if 1 /*DEBUG_XLAT_TABLE*/
 #include <stdio.h>
 #endif
 
@@ -77,15 +77,15 @@ static mmap_region_t mmap[MAX_MMAP_REGIONS + 1];
 
 static void print_mmap(void)
 {
-#if DEBUG_XLAT_TABLE
-	debug_print("mmap:\n");
+#if 1 /* DEBUG_XLAT_TABLE*/
+	/*debug_print*/printf("mmap:\n");
 	mmap_region_t *mm = mmap;
 	while (mm->size) {
-		debug_print(" %010lx %010lx %10lx %x\n", mm->base_va,
+		/*debug_print*/printf(" %010lx %010lx %10lx %x\n", mm->base_va,
 					mm->base_pa, mm->size, mm->attr);
 		++mm;
 	};
-	debug_print("\n");
+	/*debug_print*/printf("\n");
 #endif
 }
 
@@ -288,6 +288,8 @@ void init_xlat_tables(void)
 	print_mmap();
 	init_xlation_table(mmap, 0, l0_xlation_table, 0);
 	tcr_ps_bits = calc_physical_addr_size_bits(max_pa);
+	printf("mb: max_pa %lx -output> tcr_ps_bits %lx\n",
+			max_pa, tcr_ps_bits);
 	assert(max_va < ADDR_SPACE_SIZE);
 }
 

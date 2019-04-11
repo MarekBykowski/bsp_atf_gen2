@@ -255,6 +255,11 @@ int psci_setup(void)
 		psci_caps |=  define_psci_cap(PSCI_SYSTEM_OFF);
 	if (psci_plat_pm_ops->system_reset)
 		psci_caps |=  define_psci_cap(PSCI_SYSTEM_RESET);
+	if (psci_plat_pm_ops->read_mem_protect &&
+			psci_plat_pm_ops->write_mem_protect)
+		psci_caps |= define_psci_cap(PSCI_MEM_PROTECT);
+	if (psci_plat_pm_ops->mem_protect_chk)
+		psci_caps |= define_psci_cap(PSCI_MEM_CHK_RANGE_AARCH64);
 
 	return 0;
 }

@@ -80,6 +80,9 @@
 #define PSCI_FEATURES			0x8400000A
 #define PSCI_SYSTEM_SUSPEND_AARCH32	0x8400000E
 #define PSCI_SYSTEM_SUSPEND_AARCH64	0xc400000E
+#define PSCI_MEM_PROTECT		0x84000013
+#define PSCI_MEM_CHK_RANGE_AARCH32	0x84000014
+#define PSCI_MEM_CHK_RANGE_AARCH64	0xc4000014
 
 /* Macro to help build the psci capabilities bitfield */
 #define define_psci_cap(x)		(1 << (x & 0x1f))
@@ -272,6 +275,9 @@ typedef struct plat_psci_ops {
 	int (*validate_ns_entrypoint)(uintptr_t ns_entrypoint);
 	void (*get_sys_suspend_power_state)(
 				    psci_power_state_t *req_state);
+	int (*mem_protect_chk)(uintptr_t base, u_register_t length);
+	int (*read_mem_protect)(int *val);
+	int (*write_mem_protect)(int val);
 } plat_psci_ops_t;
 
 /*******************************************************************************

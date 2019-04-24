@@ -28,33 +28,39 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+# Cortex A57 specific optimisation to skip L1 cache flush when
+# cluster is powered down.
+SKIP_A57_L1_FLUSH_PWR_DWN	?=0
+# Process SKIP_A57_L1_FLUSH_PWR_DWN flag
+$(eval $(call assert_boolean,SKIP_A57_L1_FLUSH_PWR_DWN))
+$(eval $(call add_define,SKIP_A57_L1_FLUSH_PWR_DWN))
+
+# CPU Errata Build flags. These should be enabled by the
+# platform if the errata needs to be applied.
+
+# Flag to apply errata 806969 during reset. This errata applies only to
+# revision r0p0 of the Cortex A57 cpu.
+ERRATA_A57_806969	?=0
+# Process ERRATA_A57_806969 flag
+$(eval $(call assert_boolean,ERRATA_A57_806969))
+$(eval $(call add_define,ERRATA_A57_806969))
+
+# Flag to apply errata 813420 during reset. This errata applies only to
+# revision r0p0 of the Cortex A57 cpu.
+ERRATA_A57_813420	?=0
+# Process ERRATA_A57_813420 flag
+$(eval $(call assert_boolean,ERRATA_A57_813420))
+$(eval $(call add_define,ERRATA_A57_813420))
+
+# Process WORKAROUND_CVE_2017_5715 flag
+# Invalidate the Branch Target Buffer (BTB) on entry to EL3 by disabling
+# and enabling the MMU
+WORKAROUND_CVE_2017_5715	?=0
+$(eval $(call assert_boolean,WORKAROUND_CVE_2017_5715))
+$(eval $(call add_define,WORKAROUND_CVE_2017_5715))
+
 # Process WORKAROUND_CVE_2018_3639 flag
 # Set the "Disable Load Pass Store" bit in the ACTLR_EL1 for all cores
 WORKAROUND_CVE_2018_3639	?=0
 $(eval $(call assert_boolean,WORKAROUND_CVE_2018_3639))
 $(eval $(call add_define,WORKAROUND_CVE_2018_3639))
-
-# Process WORKAROUND_CVE_2017_7564 flag
-# Disable secure self-hosted debug via MDCR_EL3/SDCR
-WORKAROUND_CVE_2017_7564   ?=0
-$(eval $(call assert_boolean,WORKAROUND_CVE_2017_7564))
-$(eval $(call add_define,WORKAROUND_CVE_2017_7564))
-
-# Process WORKAROUND_CVE_2017_7563 flag
-# RO memory is always executable at AArch64 Secure EL1
-WORKAROUND_CVE_2017_7563   ?=0
-$(eval $(call assert_boolean,WORKAROUND_CVE_2017_7563))
-$(eval $(call add_define,WORKAROUND_CVE_2017_7563))
-
-# Process WORKAROUND_CVE_2017_15031 flag
-# Not initializing or saving/restoring PMCR_EL0 can leak secure world
-# timing information
-WORKAROUND_CVE_2017_15031  ?=0
-$(eval $(call assert_boolean,WORKAROUND_CVE_2017_15031))
-$(eval $(call add_define,WORKAROUND_CVE_2017_15031))
-
-# Build flag to include AArch32 registers in cpu context save and restore
-# during world switch. This flag must be set to 0 for AArch64-only platforms.
-CTX_INCLUDE_AARCH32_REGS    ?=0
-$(eval $(call assert_boolean,CTX_INCLUDE_AARCH32_REGS))
-$(eval $(call add_define,CTX_INCLUDE_AARCH32_REGS))

@@ -50,8 +50,6 @@ BL31_SOURCES +=                                            \
         drivers/arm/gic/gic_v2.c                           \
         drivers/arm/gic/gic_v3.c                           \
         plat/intel/axxia/plat_gic.c                        \
-        lib/cpus/aarch64/cortex_a57.S                      \
-        lib/cpus/aarch64/cortex_a53.S                      \
         plat/common/aarch64/platform_mp_stack.S            \
         plat/intel/axxia/bl31_plat_setup.c                 \
         plat/intel/axxia/aarch64/plat_helpers.S            \
@@ -65,6 +63,11 @@ BL31_SOURCES +=                                            \
         plat/intel/axxia/ddr_retention.c                   \
         plat/intel/axxia/datalogger.c   
 
+ifeq (${AXM5600},1)
+BL31_SOURCES += lib/cpus/aarch64/cortex_a57.S
+else ifeq (${AXC6700},1)
+BL31_SOURCES += lib/cpus/aarch64/cortex_a53.S
+endif
 ################################################################################
 # Axxia only uses BL31
 ################################################################################

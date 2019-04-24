@@ -294,6 +294,12 @@ ifneq (${ENABLE_PLAT_COMPAT}, 0)
 include plat/compat/plat_compat.mk
 endif
 
+ifeq (${AXM5600},1)
+include lib/cpus/axm5600.mk
+else ifeq (${AXC6700},1)
+include lib/cpus/axc6700.mk
+endif
+
 # Include the CPU specific operations makefile. By default all CPU errata
 # workarounds and CPU specific optimisations are disabled. This can be
 # overridden by the platform.

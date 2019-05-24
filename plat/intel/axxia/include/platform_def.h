@@ -110,7 +110,8 @@
 #define TZROM_BASE			0x80FFFF0000
 #define TZROM_SIZE			0x0000008000
 
-#define TZRAM_BASE			0x8031001000
+#define DDR_BASE 			0x80000000
+#define TZRAM_BASE			/*0x8031001000*/DDR_BASE
 #define TZRAM_SIZE			0x000003f000
 
 /*******************************************************************************

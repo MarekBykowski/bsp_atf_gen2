@@ -219,6 +219,7 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 	console_init(PL011_UART0_BASE,
                      axxia_configuration.per_clock_hz,
                      axxia_configuration.baud_rate);
+	INFO("running from %lx\n", (unsigned long)bl31_early_platform_setup);
 
 	INFO("Options: %s, %s, %s, %u MHz, %u\n",
 	     target[axxia_configuration.target],

@@ -53,7 +53,7 @@
 			       MT_MEMORY | MT_RO | MT_SECURE);	               \
 	       mmap_add_region(ro_limit, ro_limit,                             \
 			       TZRAM_SIZE - (ro_limit - ro_start),             \
-			       MT_MEMORY | MT_RW | MT_SECURE);	               \
+			       MT_MEMORY | MT_RW | MT_SECURE | MT_CACHED);	               \
                                                                                \
 	       if (IS_ANY_6700())                                              \
 		       mmap_add_region(XLF_CCN_BASE, XLF_CCN_BASE,             \
@@ -65,13 +65,14 @@
 		                                                               \
 	       mmap_add_region(DEVICE1_BASE, DEVICE1_BASE, DEVICE1_SIZE,       \
 			       MT_DEVICE | MT_RW | MT_SECURE);                 \
-                                                                               \
-	       mmap_add_region(DRAM_BASE, DRAM_BASE, DRAM_SIZE,                \
+                                                                           \
+	       mmap_add_region(DRAM_BASE, DRAM_BASE, DRAM_SIZE,     \
 			       MT_MEMORY | MT_RW | MT_SECURE | MT_CACHED);     \
 		                                                               \
 	       init_xlat_tables();				               \
 								               \
-	       enable_mmu_el##_el(DISABLE_DCACHE);		               \
+	       /*enable_mmu_el##_el(DISABLE_DCACHE);		*/               \
+	       enable_mmu_el##_el(~DISABLE_DCACHE);		               \
 	}
 
 /* Define EL1 and EL3 variants of the function initialising the MMU */

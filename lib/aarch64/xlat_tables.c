@@ -75,10 +75,16 @@ static unsigned long tcr_ps_bits;
 static mmap_region_t mmap[MAX_MMAP_REGIONS + 1];
 
 
+#include <axxia_def.h>
+#include <stdio.h>
 static void print_mmap(void)
 {
+#undef DEBUG_XLAT_TABLE
+#define DEBUG_XLAT_TABLE 1
 #if DEBUG_XLAT_TABLE
-	debug_print("mmap:\n");
+	#undef debug_print
+	#define debug_print(...) printf(__VA_ARGS__)
+	debug_print("mb: mmap:\n");
 	mmap_region_t *mm = mmap;
 	while (mm->size) {
 		debug_print(" %010lx %010lx %10lx %x\n", mm->base_va,
@@ -88,6 +94,9 @@ static void print_mmap(void)
 	debug_print("\n");
 #endif
 }
+
+#undef debug_print
+#define debug_print(...) ((void)0)
 
 void mmap_add_region(unsigned long base_pa, unsigned long base_va,
 			unsigned long size, unsigned attr)

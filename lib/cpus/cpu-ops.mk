@@ -76,13 +76,13 @@ $(eval $(call add_define,ERRATA_A57_813420))
 # Process WORKAROUND_CVE_2017_5715 flag
 # Invalidate the Branch Target Buffer (BTB) on entry to EL3 by disabling
 # and enabling the MMU
-WORKAROUND_CVE_2017_5715	?=0
+WORKAROUND_CVE_2017_5715	?=1
 $(eval $(call assert_boolean,WORKAROUND_CVE_2017_5715))
 $(eval $(call add_define,WORKAROUND_CVE_2017_5715))
 
 # Process WORKAROUND_CVE_2018_3639 flag
 # Set the "Disable Load Pass Store" bit in the ACTLR_EL1 for all cores
-WORKAROUND_CVE_2018_3639	?=0
+WORKAROUND_CVE_2018_3639	?=1
 $(eval $(call assert_boolean,WORKAROUND_CVE_2018_3639))
 $(eval $(call add_define,WORKAROUND_CVE_2018_3639))
 

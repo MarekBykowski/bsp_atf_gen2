@@ -94,7 +94,7 @@ $(eval $(call add_define,WORKAROUND_CVE_2017_7564))
 
 # Process WORKAROUND_CVE_2017_7563 flag
 # RO memory is always executable at AArch64 Secure EL1
-WORKAROUND_CVE_2017_7563   ?=0
+WORKAROUND_CVE_2017_7563   ?=1
 $(eval $(call assert_boolean,WORKAROUND_CVE_2017_7563))
 $(eval $(call add_define,WORKAROUND_CVE_2017_7563))
 

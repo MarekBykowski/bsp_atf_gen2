@@ -42,6 +42,7 @@
  * needs to be done when a cpu is hotplugged in. This function could also over-
  * ride any EL3 setup done by BL1 as this code resides in rw memory.
  ******************************************************************************/
+#include <stdio.h>
 void bl31_arch_setup(void)
 {
 	/*
@@ -49,7 +50,12 @@ void bl31_arch_setup(void)
 	  route FIQs to EL3.
 	*/
 #if WORKAROUND_CVE_2017_7563
+	unsigned long v;
+	 __asm__ volatile ("mrs %0, scr_el3":"=r" (v));
+	printf("mb: scr_el3 before %lx\n", v); 
 	write_scr_el3(read_scr_el3() | SCR_RES1_BITS | SCR_FIQ_BIT);
+	 __asm__ volatile ("mrs %0, scr_el3 ":"=r" (v));
+	printf("mb: scr_el3 before %lx\n", v); 
 #else
 	write_scr_el3(SCR_RES1_BITS | SCR_FIQ_BIT);
 #endif

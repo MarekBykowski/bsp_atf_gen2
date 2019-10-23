@@ -1,6 +1,7 @@
 #include <debug.h>
 #include <mmio.h>
 #include <delay_timer.h>
+#include <ccn_snoop.h>
 
 #include <axxia_def.h>
 #include <axxia_private.h>
@@ -99,9 +100,12 @@ enable_dsp_cluster(unsigned int cluster)
 	udelay(100);
 	mmio_write_32((cdc[cluster] + 0x2030), 1);
 
-	/* Add the cluster to the coherency domain. */
-	if (0 != set_cluster_coherency(8 + cluster, 1))
-		return -1;
+	/*
+	 * Add the DSP cluster ID to the coherency domain.
+	 * Encode the DSP cluster ID exactly as-if it was present in mpidr_el1.
+	 */
+	ccn_enter_snoop_dvm_domain(1 << MPIDR_AFFLVL1_VAL(
+					(unsigned long long) ((cluster+8) << 8)));
 
 	return 0;
 }
@@ -127,9 +131,12 @@ disable_dsp_cluster(unsigned int cluster)
 	/* flush the cluster L2 */
 	flush_dsp_l2(cluster);
 
-	/* Remove the cluster from the coherency domain. */
-	if (0 != set_cluster_coherency(8 + cluster, 0))
-		return -1;
+	/*
+	 * Remove the DSP cluster from the coherency domain.
+	 * Encode the DSP cluster ID exactly as-if it was present in mpidr_el1.
+	 */
+	ccn_exit_snoop_dvm_domain(1 << MPIDR_AFFLVL1_VAL(
+					(unsigned long long) ((cluster+8) << 8)));
 
 	control = mmio_read_32(cdc[cluster] + L2CC_CTRL);
 	control |= L2CC_POWER_DOWN_EN;

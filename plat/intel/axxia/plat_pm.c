@@ -285,18 +285,13 @@ void
 axxia_pwr_domain_on_finish(const psci_power_state_t *target_state)
 {
 	const plat_local_state_t *state;
-	unsigned int cluster;
-	unsigned int mpidr;
 
 	flush_dcache_range(0x8031000000ULL, (256 * 1024));
 
 	state = &target_state->pwr_domain_state[0];
-	mpidr = read_mpidr();
-	cluster = (mpidr >> MPIDR_AFF1_SHIFT) & MPIDR_AFFLVL_MASK;
 
 	if (PLAT_MAX_OFF_STATE == state[ARM_PWR_LVL1])
-		if (0 != set_cluster_coherency(cluster, 1))
-			WARN("Failed to make cluster %u coherent!\n", cluster);
+		plat_axxia_interconnect_enter_coherency();
 
 	if (PLAT_MAX_OFF_STATE == state[ARM_PWR_LVL0]) {
 		unsigned int oslar_el1 = 0;

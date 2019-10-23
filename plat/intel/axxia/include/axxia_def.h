@@ -87,13 +87,17 @@ extern axxia_configuration_t axxia_configuration;
 /* X9 only */
 #define CONFIG_CACHE_PROTECTION
 
-/* XLF CCN */
-#define XLF_CCN_BASE	        0x4000000000
-#define XLF_CCN_SIZE	        0x0040000000
+/* CCN-512 */
+#define XLF_CCN_BASE     0x4000000000ULL
+#define XLF_CCN_SIZE     0x40000000ULL
+
+/* CCN-504 */
+#define AXM5600_CCN_BASE     0x8000000000ULL
+#define AXM5600_CCN_SIZE     0x40000000ULL
 
 /* X9 CCN and XLF/X9 GIC */
-#define DEVICE0_BASE		0x8000000000
-#define DEVICE0_SIZE		0x0040000000
+#define DEVICE0_BASE        AXM5600_CCN_BASE
+#define DEVICE0_SIZE        AXM5600_CCN_SIZE
 
 /* AXIS Peripherals */
 #define DEVICE1_BASE		0x8080000000

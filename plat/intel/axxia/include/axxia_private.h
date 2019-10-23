@@ -112,6 +112,10 @@ unsigned int plat_get_aff_state(unsigned int aff_lvl, unsigned long mpidr);
 /* Declarations for plat_io_storage.c */
 void io_setup(void);
 
+void plat_axxia_interconnect_init(void);
+void plat_axxia_interconnect_enter_coherency(void);
+void plat_axxia_interconnect_exit_coherency(void);
+
 /*
  * Before calling this function BL2 is loaded in memory and its entrypoint
  * is set by load_image. This is a placeholder for the platform to change
@@ -154,8 +158,9 @@ void bl2_plat_get_bl32_meminfo(struct meminfo *mem_info);
 /* Gets the memory layout for BL3-3 */
 void bl2_plat_get_bl33_meminfo(struct meminfo *mem_info);
 
-int set_cluster_coherency(unsigned, unsigned);
-void flush_l3(void);
+void plat_axxia_interconnect_init(void);
+void plat_axxia_interconnect_enter_coherency(void);
+void plat_axxia_interconnect_exit_coherency(void);
 
 extern __uint64_t nca_base;
 extern int need_nca_swap;

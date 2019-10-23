@@ -28,8 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __CCN_H__
-#define __CCN_H__
+#ifndef __CCN_SNOOP_H__
+#define __CCN_SNOOP_H__
 
 /*
  * This macro defines the maximum number of master interfaces that reside on
@@ -93,6 +93,16 @@ typedef struct ccn_desc {
 	uintptr_t periphbase;
 } ccn_desc_t;
 
+/* Enum used to loop through all types of nodes in CCN*/
+typedef enum node_types {
+	NODE_TYPE_RNF = 0,
+	NODE_TYPE_RNI,
+	NODE_TYPE_RND,
+	NODE_TYPE_HNF,
+	NODE_TYPE_HNI,
+	NODE_TYPE_SN,
+	NUM_NODE_TYPES
+} node_types_t;
 
 void ccn_init(const ccn_desc_t *plat_ccn_desc);
 void ccn_enter_snoop_dvm_domain(unsigned long long master_iface_map);
@@ -109,4 +119,4 @@ void ccn_program_sys_addrmap(unsigned int sn0_id,
 unsigned int ccn_get_l3_run_mode(void);
 
 #endif /* __ASSEMBLY__ */
-#endif /* __CCN_H__ */
+#endif /* __CCN_SNOOP_H__ */

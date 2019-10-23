@@ -233,12 +233,6 @@ void bl31_early_platform_setup(bl31_params_t *from_bl2,
 	else
 		INFO("Options: %s\n",
 		cache_protection_option[CACHE_PROTECTION_ENABLED]);
-	/*
-	 * Initialise the CCN-504 driver for BL31 so that it is accessible
-	 * after a warm boot. BL1 should have already enabled CCI coherency for
-	 * this cluster during cold boot.
-	 */
-	ccn_init(CCN504_BASE);
 }
 
 const unsigned int axxia_sec_irq[] = {
@@ -258,6 +252,9 @@ void bl31_platform_setup(void)
 		value |= 0x7;
 		__asm__ __volatile__ ("msr pmuserenr_el0, %0" : : "r" (value));
 	}
+
+    /* Initialize the CCN interconnect */
+    plat_axxia_interconnect_init();
 
 	/* Initialize the gic cpu and distributor interfaces */
 	axxia_gic_setup();
@@ -478,95 +475,12 @@ udelay(unsigned long us)
 	return;
 }
 
-static int
-set_l3_state(unsigned int state)
-{
-	int i;
-        unsigned int status;
-	int retries;
-	unsigned int hnf_offsets[] = {
-		0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27
-	};
-	volatile unsigned long *address;
-	unsigned long dickens_base;
-
-	/*
-	 * Skip for XLF simulation -- currently not suppported.
-	 */
-
-	if (IS_ANY_6700() && IS_SIM()) {
-		WARN("L3 State Not Available in XLF Simulation\n");
-
-		return 0;
-	}
-
-	if (IS_5600())
-		dickens_base = DICKENS_BASE_X9;
-	else
-		dickens_base = DICKENS_BASE_XLF;
-
-	if (0 != (state & ~0x3))
-		return -1;
-
-	for (i = 0; i < (sizeof(hnf_offsets) / sizeof(unsigned int)); ++i) {
-		address = (unsigned long *)
-			(dickens_base + (0x10000 * hnf_offsets[i]) + 0x10);
-		*address = state;
-		dsb();
-	}
-
-	for (i = 0; i < (sizeof(hnf_offsets) / sizeof(unsigned int)); ++i) {
-		retries = 10000;
-		address = (unsigned long *)
-			(dickens_base + (0x10000 * hnf_offsets[i]) + 0x18);
-
-		do {
-			udelay(1);
-			status = *address;
-		} while ((0 < --retries) && ((state << 2) != (status & 0xf)));
-
-		if (0 == retries)
-			return -1;
-	}
-
-	return 0;
-}
-
-void
-flush_l3(void)
-{
-	int rc;
-
-	rc = set_l3_state(0);
-
-	if (0 != rc) {
-		printf("Error Setting L3 to OFF!\n");
-
-		return;
-	}
-
-#ifndef LEAVE_L3_IN_SFONLY
-	rc = set_l3_state(3);
-
-	if (0 != rc) {
-		printf("Error Setting L3 to FULL!\n");
-
-		return;
-	}
-#endif
-}
 
 /*
   ==============================================================================
   Clusters and Coherency
 */
-
-static int number_of_clusters;
-static int bit_by_cluster[12];	/* Last 4 are DSP on XLF */
-
-static int
-initialize_cluster_info(void)
-{
+/*
 	if (IS_5600()) {
 		number_of_clusters = 4;
 
@@ -643,98 +557,7 @@ initialize_cluster_info(void)
 			bit_by_cluster[11] = -1;
 		}
 	}
-
-	return 0;
-}
-
-static unsigned long
-get_bit_by_cluster(unsigned long cluster)
-{
-	return bit_by_cluster[cluster];
-}
-
-int
-set_cluster_coherency(unsigned cluster, unsigned state)
-{
-	unsigned int sdcr_offsets[] = {
-		0x00,		/* This is the DVM */
-		0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27
-	};
-	int i;
-	int retries;
-	unsigned int mask;
-	int upper_half = 0;
-	unsigned int value;
-	unsigned long dickens_base;
-
-	INFO("%s cluster %u %s the coherency domain.\n",
-	     state == 1 ? "Adding" : "Removing",
-	     cluster,
-	     state == 1 ? "to" : "from");
-
-	/*
-	 * Skip for XLF simulation -- currently not suppported.
-	 */
-
-	if (IS_ANY_6700() && IS_SIM()) {
-		WARN("Coherency Not Settable in XLF Simulation\n");
-
-		return 0;
-	}
-
-	if (IS_5600())
-		dickens_base = DICKENS_BASE_X9;
-	else
-		dickens_base = DICKENS_BASE_XLF;
-
-	initialize_cluster_info();
-
-	if (cluster >= number_of_clusters)
-		return -1;
-
-	if (31 < get_bit_by_cluster(cluster)) {
-		mask = (1 << (get_bit_by_cluster(cluster) - 32));
-		upper_half = 1;
-	} else {
-		mask = (1 << get_bit_by_cluster(cluster));
-	}
-
-	for (i = 0; i < (sizeof(sdcr_offsets) / sizeof(unsigned int)); ++i) {
-		unsigned long offset;
-
-		offset = (dickens_base | (sdcr_offsets[i] << 16));
-
-		if (0 != upper_half)
-			offset += 4;
-
-		if (0 == state)
-			mmio_write_32((uintptr_t)(offset + 0x220),
-				      (unsigned int)mask);
-		else
-			mmio_write_32((uintptr_t)(offset + 0x210),
-				      (unsigned int)mask);
-
-		retries = 1000;
-
-		do {
-			--retries;
-			value = mmio_read_32(offset + 0x200);
-
-			if (0 == state) {
-				if (0 == (mask & value))
-					break;
-			} else {
-				if (mask == (mask & value))
-					break;
-			}
-		} while (0 < retries);
-
-		if (0 == retries)
-			return -1;
-	}
-
-	return 0;
-}
+*/
 
 /*
   ------------------------------------------------------------------------------
@@ -744,8 +567,8 @@ set_cluster_coherency(unsigned cluster, unsigned state)
 void
 bl31_plat_runtime_setup(void)
 {
-	if (0 != set_cluster_coherency(0, 1))
-		ERROR("Adding cluster 0 to the coherency domain failed!\n");
+	/* Place current master into coherency */
+	plat_axxia_interconnect_enter_coherency();
 
 	/* Start with all DSP clusters off. */
 	if (IS_ANY_6700())

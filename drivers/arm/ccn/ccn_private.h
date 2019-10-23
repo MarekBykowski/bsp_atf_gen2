@@ -1,35 +1,11 @@
 /*
- * Copyright (c) 2015, ARM Limited and Contributors. All rights reserved.
+ * Copyright (c) 2015-2016, ARM Limited and Contributors. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- *
- * Neither the name of ARM nor the names of its contributors may be used
- * to endorse or promote products derived from this software without specific
- * prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#ifndef __CCN_PRIVATE_H__
-#define __CCN_PRIVATE_H__
+#ifndef CCN_PRIVATE_H
+#define CCN_PRIVATE_H
 
 /*
  * A CCN implementation can have a maximum of 64 Request nodes with node IDs
@@ -104,7 +80,7 @@ typedef enum rn_types {
 #define WAIT_FOR_DOMAIN_CTRL_OP_COMPLETION(region_id, stat_reg_offset,		\
 					   op_reg_offset, rn_id_map)		\
 	{									\
-		uint64_t status_reg;						\
+		unsigned long long status_reg;						\
 		do {								\
 			status_reg = ccn_reg_read((ccn_plat_desc->periphbase),	\
 						  (region_id),			\
@@ -147,8 +123,9 @@ typedef enum rn_types {
 #define MN_HNI_NODEID_OFFSET	0x01C0
 #define MN_SN_NODEID_OFFSET	0x01D0
 #define MN_DDC_STAT_OFFSET	DOMAIN_CTRL_STAT_OFFSET
-#define MN_DDC_SET_OFF		DOMAIN_CTRL_SET_OFFSET
+#define MN_DDC_SET_OFFSET	DOMAIN_CTRL_SET_OFFSET
 #define MN_DDC_CLR_OFFSET	DOMAIN_CTRL_CLR_OFFSET
+#define MN_PERIPH_ID_0_1_OFFSET	0xFE0
 #define MN_ID_OFFSET		REGION_ID_OFFSET
 
 /* HNF System Address Map register bit masks and shifts */
@@ -157,13 +134,13 @@ typedef enum rn_types {
 #define HNF_SAM_CTRL_SN1_ID_SHIFT	8
 #define HNF_SAM_CTRL_SN2_ID_SHIFT	16
 
-#define HNF_SAM_CTRL_TAB0_MASK		0x3fUL
+#define HNF_SAM_CTRL_TAB0_MASK		0x3fULL
 #define HNF_SAM_CTRL_TAB0_SHIFT		48
-#define HNF_SAM_CTRL_TAB1_MASK		0x3fUL
+#define HNF_SAM_CTRL_TAB1_MASK		0x3fULL
 #define HNF_SAM_CTRL_TAB1_SHIFT		56
 
 #define HNF_SAM_CTRL_3SN_ENB_SHIFT	32
-#define HNF_SAM_CTRL_3SN_ENB_MASK	0x01UL
+#define HNF_SAM_CTRL_3SN_ENB_MASK	0x01ULL
 
 /*
  * Macro to create a value suitable for programming into a HNF SAM Control
@@ -192,7 +169,7 @@ typedef enum rn_types {
 #define FOR_EACH_BIT(bit_pos, bit_map)			\
 	for (bit_pos = __builtin_ctzll(bit_map);	\
 	     bit_map;					\
-	     bit_map &= ~(1UL << bit_pos),		\
+	     bit_map &= ~(1ULL << (bit_pos)),		\
 	     bit_pos = __builtin_ctzll(bit_map))
 
 /*
@@ -207,7 +184,7 @@ typedef enum rn_types {
 /*
  * Helper function to return number of set bits in bitmap
  */
-static inline unsigned int count_set_bits(uint64_t bitmap)
+static inline unsigned int count_set_bits(unsigned long long bitmap)
 {
 	unsigned int count = 0;
 
@@ -236,4 +213,21 @@ static inline unsigned int count_set_bits(uint64_t bitmap)
  */
 #define FOR_EACH_PRESENT_MASTER_INTERFACE(iface_id, bit_map)	\
 			FOR_EACH_BIT(iface_id, bit_map)
-#endif /* __CCN_PRIVATE_H__ */
+
+/*
+ * Macro that returns the node id bit map for the Miscellaneous Node
+ */
+#define CCN_GET_MN_NODEID_MAP(periphbase)				\
+	(1 << get_node_id(ccn_reg_read(periphbase, MN_REGION_ID,	\
+						REGION_ID_OFFSET)))
+
+/*
+ * This macro returns the bitmap of Home nodes on the basis of the
+ * 'mn_hn_id_reg_offset' parameter from the Miscellaneous node's (MN)
+ * programmer's view. The MN has a register which carries the bitmap of present
+ * Home nodes of each type i.e. HN-Fs, HN-Is & HN-Ds.
+ */
+#define CCN_GET_HN_NODEID_MAP(periphbase, mn_hn_id_reg_offset)		\
+	ccn_reg_read(periphbase, MN_REGION_ID, mn_hn_id_reg_offset)
+
+#endif /* CCN_PRIVATE_H */

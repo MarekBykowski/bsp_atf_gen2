@@ -222,8 +222,7 @@ int axxia_pwrc_cpu_shutdown(unsigned int reqcpu)
 		dsb();
 
 		/* Remove the cluster from the CCN-504 coherency domain to ensure there will be no snoop requests */
-		if (0 != set_cluster_coherency(cluster, 0))
-			WARN("Failed to remove cluster %u coherent!\n", cluster);
+		plat_axxia_interconnect_exit_coherency();
 
 		udelay(64);
 

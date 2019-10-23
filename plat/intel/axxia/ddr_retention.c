@@ -25,6 +25,7 @@
 #include <debug.h>
 #include <mmio.h>
 #include <arch_helpers.h>
+#include <ccn_snoop.h>
 #include "axxia_def.h"
 #include "axxia_private.h"
 
@@ -299,7 +300,9 @@ initiate_retention_reset(void)
     dsb();
     plat_flush_dcache_l2();
     dsb();
-    flush_l3();
+	/* Flushing l3 is power transition FAM->NOL3->FAM */
+	ccn_set_l3_run_mode(CCN_L3_RUN_MODE_NOL3);
+	ccn_set_l3_run_mode(CCN_L3_RUN_MODE_FAM);
     dsb();
 
 	/* reset ELM DDR access trace buffer */

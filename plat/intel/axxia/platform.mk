@@ -35,7 +35,7 @@ PLAT_INCLUDES := -Iplat/intel/axxia/include
 
 PLAT_BL_COMMON_SOURCES :=                       \
         drivers/arm/pl011/pl011_console.S       \
-        drivers/arm/ccn504/ccn504.c             \
+        drivers/arm/ccn/ccn.c                   \
         drivers/io/io_fip.c                     \
         drivers/io/io_memmap.c                  \
         drivers/io/io_storage.c                 \
@@ -63,7 +63,8 @@ BL31_SOURCES +=                                            \
         plat/intel/axxia/oem_svc.c                         \
         plat/intel/axxia/aarch64/datalogger_dump.S         \
         plat/intel/axxia/ddr_retention.c                   \
-        plat/intel/axxia/datalogger.c   
+        plat/intel/axxia/datalogger.c                      \
+        plat/intel/axxia/axxia_ccn.c
 
 ################################################################################
 # Axxia only uses BL31

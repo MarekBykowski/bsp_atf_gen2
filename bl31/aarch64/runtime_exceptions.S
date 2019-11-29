@@ -84,6 +84,13 @@
 	bl	save_gp_registers
 
 	/*
+	 * Save PMCR_EL0 and disable all event counters and cycle
+	 * counter when event counting is prohibited when coming
+	 * either from secure or non-secure state.
+	 */
+	bl	save_pmcr_disable_pmu
+
+	/*
 	 * Save the EL3 system registers needed to return from
 	 * this exception.
 	 */
@@ -448,6 +455,13 @@ smc_handler64:
 	 * to pass to the handler.
 	 */
 	bl	save_gp_registers
+
+	/*
+	 * Save PMCR_EL0 and disable all event counters and cycle
+	 * counter when event counting is prohibited when coming
+	 * either from secure or non-secure state.
+	 */
+	bl	save_pmcr_disable_pmu
 
 	mov	x5, xzr
 	mov	x6, sp
